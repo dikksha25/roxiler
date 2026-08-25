@@ -1,4 +1,6 @@
 const userRepository = require('../database/repositories/user.repository');
+const storeRepository = require('../database/repositories/store.repository');
+const ratingRepository = require('../database/repositories/rating.repository');
 const { hashPassword } = require('../utils/password.util');
 const PaginationUtil = require('../utils/pagination.util');
 const NotFoundError = require('../errors/notFound.error');
@@ -63,13 +65,39 @@ class UserService {
   }
 
   /**
-   * Get single user profile by ID
+   * Get single user profile by ID with role-specific enrichment (e.g. store & rating data for STORE_OWNER)
    */
   async getUserById(userId) {
     const user = await userRepository.findUserProfileById(userId);
     if (!user) {
       throw new NotFoundError(`User with ID ${userId} was not found.`);
     }
+
+    // Role-specific enrichment for STORE_OWNER
+    if (user.role === ROLES.STORE_OWNER) {
+      const ownedStores = await storeRepository.findByOwnerId(user.id);
+      user.owned_stores = ownedStores.map((st) => ({
+        id: st.id,
+        name: st.name,
+        email: st.email,
+        address: st.address,
+        average_rating: st.average_rating || '0.00',
+        overall_rating: st.overall_rating || '0.00',
+        rating_count: st.rating_count || 0,
+      }));
+
+      // Calculate aggregate store performance
+      const totalReviews = user.owned_stores.reduce((acc, curr) => acc + (curr.rating_count || 0), 0);
+      user.total_ratings_received = totalReviews;
+    } else if (user.role === ROLES.NORMAL_USER) {
+      try {
+        const ratings = await ratingRepository.findByUserId(user.id);
+        user.total_ratings_submitted = (ratings && ratings.length) || 0;
+      } catch {
+        user.total_ratings_submitted = 0;
+      }
+    }
+
     return user;
   }
 
