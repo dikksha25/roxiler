@@ -126,6 +126,10 @@ class RatingService {
       offset,
       page,
       search,
+      name,
+      email,
+      address,
+      rating,
       storeId,
       sortBy,
       sortOrder,
@@ -133,6 +137,10 @@ class RatingService {
 
     const { items, total } = await ratingRepository.findPaginatedForOwner(ownerId, {
       search,
+      name,
+      email,
+      address,
+      rating,
       storeId,
       sortBy,
       sortOrder,

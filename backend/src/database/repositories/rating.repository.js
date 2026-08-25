@@ -47,6 +47,8 @@ const OWNER_RATING_SORT_ALLOWLIST = {
   user_name: 'u.name',
   email: 'u.email',
   user_email: 'u.email',
+  address: 'u.address',
+  user_address: 'u.address',
   rating: 'r.rating_value',
   rating_value: 'r.rating_value',
   date: 'r.created_at',
@@ -169,6 +171,10 @@ class RatingRepository extends BaseRepository {
    */
   async findPaginatedForOwner(ownerId, {
     search = '',
+    name = '',
+    email = '',
+    address = '',
+    rating = null,
     storeId = null,
     sortBy = 'created_at',
     sortOrder = 'DESC',
@@ -188,10 +194,30 @@ class RatingRepository extends BaseRepository {
         whereClauses.push(`r.store_id = $${params.length}`);
       }
 
+      if (rating) {
+        params.push(parseInt(rating, 10));
+        whereClauses.push(`r.rating_value = $${params.length}`);
+      }
+
+      if (name) {
+        params.push(`%${name.trim()}%`);
+        whereClauses.push(`u.name ILIKE $${params.length}`);
+      }
+
+      if (email) {
+        params.push(`%${email.trim()}%`);
+        whereClauses.push(`u.email ILIKE $${params.length}`);
+      }
+
+      if (address) {
+        params.push(`%${address.trim()}%`);
+        whereClauses.push(`u.address ILIKE $${params.length}`);
+      }
+
       if (search) {
         params.push(`%${search.trim()}%`);
         const pIdx = params.length;
-        whereClauses.push(`(u.name ILIKE $${pIdx} OR u.email ILIKE $${pIdx} OR s.name ILIKE $${pIdx})`);
+        whereClauses.push(`(u.name ILIKE $${pIdx} OR u.email ILIKE $${pIdx} OR u.address ILIKE $${pIdx} OR s.name ILIKE $${pIdx})`);
       }
 
       const whereSql = `WHERE ${whereClauses.join(' AND ')}`;
@@ -255,6 +281,10 @@ class RatingRepository extends BaseRepository {
         filtered = filtered.filter((r) => r.store_id === parseInt(storeId, 10));
       }
 
+      if (rating) {
+        filtered = filtered.filter((r) => r.rating_value === parseInt(rating, 10));
+      }
+
       let mapped = filtered.map((r) => {
         const store = ownerStores.find((s) => s.id === r.store_id) || { name: 'Owned Store', address: 'Marketplace' };
         const user = (userRepository.inMemoryUsers || []).find((u) => u.id === r.user_id) || {
@@ -283,12 +313,28 @@ class RatingRepository extends BaseRepository {
         };
       });
 
+      if (name) {
+        const n = name.trim().toLowerCase();
+        mapped = mapped.filter((m) => m.user.name.toLowerCase().includes(n));
+      }
+
+      if (email) {
+        const e = email.trim().toLowerCase();
+        mapped = mapped.filter((m) => m.user.email.toLowerCase().includes(e));
+      }
+
+      if (address) {
+        const a = address.trim().toLowerCase();
+        mapped = mapped.filter((m) => (m.user.address || '').toLowerCase().includes(a));
+      }
+
       if (search) {
         const s = search.trim().toLowerCase();
         mapped = mapped.filter(
           (m) =>
             m.user.name.toLowerCase().includes(s) ||
             m.user.email.toLowerCase().includes(s) ||
+            (m.user.address || '').toLowerCase().includes(s) ||
             m.store_name.toLowerCase().includes(s)
         );
       }
@@ -304,6 +350,9 @@ class RatingRepository extends BaseRepository {
         } else if (sortBy === 'email' || sortBy === 'user_email') {
           valA = a.user.email.toLowerCase();
           valB = b.user.email.toLowerCase();
+        } else if (sortBy === 'address' || sortBy === 'user_address') {
+          valA = (a.user.address || '').toLowerCase();
+          valB = (b.user.address || '').toLowerCase();
         } else if (sortBy === 'rating' || sortBy === 'rating_value') {
           valA = a.rating_value;
           valB = b.rating_value;

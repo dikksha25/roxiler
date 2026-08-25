@@ -44,12 +44,27 @@ const updateRating = asyncHandler(async (req, res) => {
 
 const getOwnerRatings = asyncHandler(async (req, res) => {
   const parsedQuery = QueryParamsUtil.parse(req.query, {
-    allowedSortFields: ['name', 'user_name', 'email', 'user_email', 'rating', 'rating_value', 'date', 'created_at'],
+    allowedSortFields: [
+      'name',
+      'user_name',
+      'email',
+      'user_email',
+      'address',
+      'user_address',
+      'rating',
+      'rating_value',
+      'date',
+      'created_at',
+    ],
     defaultSortBy: 'created_at',
   });
 
   parsedQuery.storeId = req.query.storeId ? parseInt(req.query.storeId, 10) : null;
+  parsedQuery.rating = req.query.rating ? parseInt(req.query.rating, 10) : null;
   parsedQuery.search = req.query.search || '';
+  parsedQuery.name = req.query.name || '';
+  parsedQuery.email = req.query.email || '';
+  parsedQuery.address = req.query.address || '';
 
   const { ratings, pagination } = await ratingService.getOwnerRatings(req.user.id, parsedQuery);
   return ApiResponse.success(res, 'Store owner ratings retrieved successfully', { ratings }, 200, pagination);

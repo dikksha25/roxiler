@@ -88,8 +88,19 @@ const listOwnerRatingsValidator = [
 
   query('sortBy')
     .optional()
-    .isIn(['name', 'user_name', 'email', 'user_email', 'rating', 'rating_value', 'date', 'created_at'])
-    .withMessage('sortBy must be one of: [name, user_name, email, user_email, rating, rating_value, date, created_at]'),
+    .isIn([
+      'name',
+      'user_name',
+      'email',
+      'user_email',
+      'address',
+      'user_address',
+      'rating',
+      'rating_value',
+      'date',
+      'created_at',
+    ])
+    .withMessage('sortBy must be a valid allowed field'),
 
   query('sortOrder')
     .optional()
@@ -101,9 +112,15 @@ const listOwnerRatingsValidator = [
     .isInt({ min: 1 })
     .withMessage('storeId must be a positive integer'),
 
-  query('search')
+  query('rating')
     .optional()
-    .trim(),
+    .isInt({ min: 1, max: 5 })
+    .withMessage('rating filter must be between 1 and 5'),
+
+  query('search').optional().trim(),
+  query('name').optional().trim(),
+  query('email').optional().trim(),
+  query('address').optional().trim(),
 ];
 
 module.exports = {

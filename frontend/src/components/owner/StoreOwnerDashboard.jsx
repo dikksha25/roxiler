@@ -21,8 +21,19 @@ export const StoreOwnerDashboard = () => {
     totalPages: 1,
   });
 
+  // Filter states
   const [searchInput, setSearchInput] = useState('');
+  const [nameInput, setNameInput] = useState('');
+  const [emailInput, setEmailInput] = useState('');
+  const [addressInput, setAddressInput] = useState('');
+  const [ratingScoreFilter, setRatingScoreFilter] = useState('');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
+  // Debounced filters
   const debouncedSearch = useDebounce(searchInput, 300);
+  const debouncedName = useDebounce(nameInput, 300);
+  const debouncedEmail = useDebounce(emailInput, 300);
+  const debouncedAddress = useDebounce(addressInput, 300);
 
   const [sort, setSort] = useState({
     sortBy: 'created_at',
@@ -34,6 +45,14 @@ export const StoreOwnerDashboard = () => {
   const [ratingsLoading, setRatingsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
+
+  const activeFiltersCount = [
+    debouncedSearch,
+    debouncedName,
+    debouncedEmail,
+    debouncedAddress,
+    ratingScoreFilter,
+  ].filter(Boolean).length;
 
   // 1. Fetch Store Owner Statistics & Metrics
   const fetchStatistics = useCallback(async () => {
@@ -51,7 +70,7 @@ export const StoreOwnerDashboard = () => {
     }
   }, [selectedStoreId]);
 
-  // 2. Fetch Customer Reviewers List with Pagination & Sorting
+  // 2. Fetch Customer Reviewers List with Pagination & Multi-field Filtering
   const fetchRatings = useCallback(async () => {
     setRatingsLoading(true);
     try {
@@ -61,6 +80,10 @@ export const StoreOwnerDashboard = () => {
         sortBy: sort.sortBy,
         sortOrder: sort.sortOrder,
         search: debouncedSearch || undefined,
+        name: debouncedName || undefined,
+        email: debouncedEmail || undefined,
+        address: debouncedAddress || undefined,
+        rating: ratingScoreFilter || undefined,
         storeId: selectedStoreId || undefined,
       };
 
@@ -86,6 +109,10 @@ export const StoreOwnerDashboard = () => {
     sort.sortBy,
     sort.sortOrder,
     debouncedSearch,
+    debouncedName,
+    debouncedEmail,
+    debouncedAddress,
+    ratingScoreFilter,
     selectedStoreId,
   ]);
 
@@ -104,6 +131,14 @@ export const StoreOwnerDashboard = () => {
     }
   };
 
+  const handleClearFilters = () => {
+    setSearchInput('');
+    setNameInput('');
+    setEmailInput('');
+    setAddressInput('');
+    setRatingScoreFilter('');
+  };
+
   // Initial load
   useEffect(() => {
     const init = async () => {
@@ -119,10 +154,18 @@ export const StoreOwnerDashboard = () => {
     fetchRatings();
   }, [fetchRatings]);
 
-  // Reset pagination on search / store filter change
+  // Reset pagination on filter / sort change
   useEffect(() => {
     setRatingsPagination((prev) => ({ ...prev, page: 1 }));
-  }, [debouncedSearch, selectedStoreId, sort]);
+  }, [
+    debouncedSearch,
+    debouncedName,
+    debouncedEmail,
+    debouncedAddress,
+    ratingScoreFilter,
+    selectedStoreId,
+    sort,
+  ]);
 
   const handleSortToggle = (field) => {
     setSort((prev) => ({
@@ -393,35 +436,135 @@ export const StoreOwnerDashboard = () => {
 
       {/* SECTION 3: USERS WHO RATED THE STORE (INTERACTIVE TABLE) */}
       <Card style={{ padding: 0, overflow: 'hidden', marginBottom: '2rem' }}>
-        {/* Table Header & Search Filter */}
+        {/* Table Header & Search Filter Bar */}
         <div
           style={{
             padding: '1.25rem 1.5rem',
             borderBottom: '1px solid var(--border-subtle)',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '1rem',
+            background: 'rgba(255, 255, 255, 0.01)',
           }}
         >
-          <div>
-            <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.15rem' }}>👥 Customer Reviewers Feed</h3>
-            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-              Full list of verified customers who submitted reviews for your store.
-            </p>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '1rem',
+              marginBottom: '1rem',
+            }}
+          >
+            <div>
+              <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.15rem' }}>👥 Customer Reviewers Feed</h3>
+              <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                Full list of verified customers who submitted reviews for your store.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <div style={{ width: '260px' }}>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="Global search reviewer / store..."
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  style={{ fontSize: '0.85rem', width: '100%' }}
+                />
+              </div>
+
+              <Button
+                variant="secondary"
+                onClick={() => setShowAdvancedFilters((prev) => !prev)}
+                style={{ fontSize: '0.85rem' }}
+              >
+                {showAdvancedFilters ? '▲ Hide Filters' : '▼ Specific Filters'}
+              </Button>
+
+              {activeFiltersCount > 0 && (
+                <Button
+                  variant="secondary"
+                  onClick={handleClearFilters}
+                  style={{ fontSize: '0.85rem' }}
+                >
+                  Clear ({activeFiltersCount})
+                </Button>
+              )}
+            </div>
           </div>
 
-          <div style={{ width: '280px' }}>
-            <input
-              type="text"
-              className="input-field"
-              placeholder="Search reviewer name or email..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              style={{ fontSize: '0.85rem', width: '100%' }}
-            />
-          </div>
+          {/* Collapsible Specific Multi-Field Filters */}
+          {showAdvancedFilters && (
+            <div
+              className="grid grid-4 fade-in"
+              style={{
+                gap: '0.75rem',
+                paddingTop: '1rem',
+                borderTop: '1px solid var(--border-subtle)',
+              }}
+            >
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-dim)', display: 'block', marginBottom: '0.25rem' }}>
+                  FILTER BY USER NAME
+                </label>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="e.g. Sarah"
+                  value={nameInput}
+                  onChange={(e) => setNameInput(e.target.value)}
+                  style={{ fontSize: '0.85rem', width: '100%' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-dim)', display: 'block', marginBottom: '0.25rem' }}>
+                  FILTER BY USER EMAIL
+                </label>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="e.g. @example.com"
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  style={{ fontSize: '0.85rem', width: '100%' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-dim)', display: 'block', marginBottom: '0.25rem' }}>
+                  FILTER BY ADDRESS
+                </label>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="e.g. Terrace or Sector"
+                  value={addressInput}
+                  onChange={(e) => setAddressInput(e.target.value)}
+                  style={{ fontSize: '0.85rem', width: '100%' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-dim)', display: 'block', marginBottom: '0.25rem' }}>
+                  FILTER BY STAR SCORE
+                </label>
+                <select
+                  className="input-field"
+                  value={ratingScoreFilter}
+                  onChange={(e) => setRatingScoreFilter(e.target.value)}
+                  style={{ fontSize: '0.85rem', width: '100%' }}
+                >
+                  <option value="">All Scores (1–5)</option>
+                  <option value="5">⭐⭐⭐⭐⭐ 5 Stars</option>
+                  <option value="4">⭐⭐⭐⭐ 4 Stars</option>
+                  <option value="3">⭐⭐⭐ 3 Stars</option>
+                  <option value="2">⭐⭐ 2 Stars</option>
+                  <option value="1">⭐ 1 Star</option>
+                </select>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Table Content */}
@@ -435,12 +578,19 @@ export const StoreOwnerDashboard = () => {
         ) : ratings.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '3.5rem 1rem' }}>
             <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '0.75rem' }}>💬</span>
-            <h4 style={{ margin: '0 0 0.35rem 0' }}>No Customer Ratings Found</h4>
-            <p style={{ color: 'var(--text-muted)', maxWidth: '400px', margin: '0 auto', fontSize: '0.85rem' }}>
-              {searchInput
-                ? 'No reviewer matches your search query. Try clearing the search box.'
-                : 'Your store has not received any customer ratings yet.'}
+            <h4 style={{ margin: '0 0 0.35rem 0' }}>
+              {activeFiltersCount > 0 ? 'No Matching Reviewers Found' : 'No ratings yet.'}
+            </h4>
+            <p style={{ color: 'var(--text-muted)', maxWidth: '400px', margin: '0 auto 1rem auto', fontSize: '0.85rem' }}>
+              {activeFiltersCount > 0
+                ? 'No customer reviews match your active search filters. Try clearing or relaxing your query.'
+                : 'Your store has not received any customer ratings yet. Ratings will appear here once customers submit them.'}
             </p>
+            {activeFiltersCount > 0 && (
+              <Button variant="secondary" onClick={handleClearFilters} style={{ fontSize: '0.85rem' }}>
+                Reset Search Filters
+              </Button>
+            )}
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
@@ -459,7 +609,12 @@ export const StoreOwnerDashboard = () => {
                   >
                     User Email {sort.sortBy === 'email' ? (sort.sortOrder === 'ASC' ? '▲' : '▼') : ''}
                   </th>
-                  <th style={{ padding: '0.85rem 1.25rem' }}>User Address</th>
+                  <th
+                    style={{ padding: '0.85rem 1.25rem', cursor: 'pointer' }}
+                    onClick={() => handleSortToggle('address')}
+                  >
+                    User Address {sort.sortBy === 'address' ? (sort.sortOrder === 'ASC' ? '▲' : '▼') : ''}
+                  </th>
                   {stores.length > 1 && !selectedStoreId && (
                     <th style={{ padding: '0.85rem 1.25rem' }}>Store Name</th>
                   )}
@@ -473,9 +628,9 @@ export const StoreOwnerDashboard = () => {
                     style={{ padding: '0.85rem 1.25rem', cursor: 'pointer' }}
                     onClick={() => handleSortToggle('created_at')}
                   >
-                    Submission Date {sort.sortBy === 'created_at' ? (sort.sortOrder === 'ASC' ? '▲' : '▼') : ''}
+                    Rating Date {sort.sortBy === 'created_at' ? (sort.sortOrder === 'ASC' ? '▲' : '▼') : ''}
                   </th>
-                  <th style={{ padding: '0.85rem 1.25rem' }}>Customer Feedback</th>
+                  <th style={{ padding: '0.85rem 1.25rem' }}>Feedback Comment</th>
                 </tr>
               </thead>
               <tbody>
