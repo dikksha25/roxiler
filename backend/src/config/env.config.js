@@ -1,20 +1,55 @@
 const path = require('path');
 const dotenv = require('dotenv');
 
+// Load .env file
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+
+/**
+ * Validate and sanitize environment variables
+ */
+const validateEnv = () => {
+  const warnings = [];
+  const errors = [];
+
+  const requiredInProduction = ['JWT_SECRET', 'PGHOST', 'PGDATABASE', 'PGUSER', 'PGPASSWORD'];
+
+  if (process.env.NODE_ENV === 'production') {
+    for (const key of requiredInProduction) {
+      if (!process.env[key]) {
+        errors.push(`Missing required environment variable in production: ${key}`);
+      }
+    }
+  }
+
+  // Check JWT secret strength in non-test
+  if (!process.env.JWT_SECRET) {
+    warnings.push('JWT_SECRET not provided in .env. Using fallback development key.');
+  }
+
+  if (warnings.length > 0 && process.env.NODE_ENV !== 'test') {
+    warnings.forEach((w) => console.warn(`⚠️  [ENV Config Warning]: ${w}`));
+  }
+
+  if (errors.length > 0) {
+    errors.forEach((e) => console.error(`❌ [ENV Config Fatal]: ${e}`));
+    throw new Error('Environment configuration validation failed.');
+  }
+};
+
+validateEnv();
 
 const envConfig = Object.freeze({
   env: process.env.NODE_ENV || 'development',
   isProduction: process.env.NODE_ENV === 'production',
   isDevelopment: process.env.NODE_ENV === 'development',
   isTest: process.env.NODE_ENV === 'test',
-  
+
   port: parseInt(process.env.PORT, 10) || 5000,
   apiVersion: process.env.API_VERSION || 'v1',
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
 
   jwt: {
-    secret: process.env.JWT_SECRET || 'dev_secret_change_me_in_production_key_123',
+    secret: process.env.JWT_SECRET || 'dev_super_secret_store_rating_jwt_key_2026',
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
   },
 
