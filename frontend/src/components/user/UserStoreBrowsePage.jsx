@@ -112,8 +112,29 @@ export const UserStoreBrowsePage = () => {
     setSort({ sortBy: 'rating', sortOrder: 'DESC' });
   };
 
-  const handleRatingSuccess = (ratingData) => {
-    setSuccessMsg('Your rating was submitted successfully! Overall score updated.');
+  const handleRatingSuccess = ({ storeId, ratingValue, comment, isModify }) => {
+    // 1. Optimistically update local store item
+    setStores((prevStores) =>
+      prevStores.map((st) => {
+        if (st.id === storeId) {
+          return {
+            ...st,
+            user_rating: ratingValue,
+            my_rating: ratingValue,
+            my_comment: comment,
+          };
+        }
+        return st;
+      })
+    );
+
+    setSuccessMsg(
+      isModify
+        ? `Rating for store updated successfully to ${ratingValue} Stars!`
+        : `Thank you! Your ${ratingValue}-star rating was recorded successfully.`
+    );
+
+    // 2. Fetch fresh aggregates from server
     fetchStores();
   };
 
@@ -369,11 +390,11 @@ export const UserStoreBrowsePage = () => {
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', fontWeight: 600, textTransform: 'uppercase' }}>
-                        Your Rating
+                        Your Rating Status
                       </span>
                       {isUserRated ? (
                         <span style={{ color: 'var(--accent-success)', fontSize: '0.85rem', fontWeight: 700 }}>
-                          ⭐ {s.user_rating} / 5 Stars
+                          ⭐ You Rated: {s.user_rating} / 5 Stars
                         </span>
                       ) : (
                         <span style={{ color: 'var(--text-dim)', fontSize: '0.75rem' }}>
@@ -381,6 +402,21 @@ export const UserStoreBrowsePage = () => {
                         </span>
                       )}
                     </div>
+                    {isUserRated && s.my_comment && (
+                      <div
+                        style={{
+                          fontSize: '0.75rem',
+                          color: 'var(--text-muted)',
+                          fontStyle: 'italic',
+                          marginTop: '0.35rem',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        "{s.my_comment}"
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -391,7 +427,7 @@ export const UserStoreBrowsePage = () => {
                     onClick={() => setSelectedStoreForRating(s)}
                     style={{ width: '100%', fontSize: '0.85rem' }}
                   >
-                    {isUserRated ? '✏️ Modify Your Rating' : '⭐ Rate This Store'}
+                    {isUserRated ? '✏️ Modify Rating' : '⭐ Submit Rating'}
                   </Button>
                 </div>
               </Card>
@@ -478,7 +514,7 @@ export const UserStoreBrowsePage = () => {
                           onClick={() => setSelectedStoreForRating(s)}
                           style={{ fontSize: '0.75rem', padding: '0.3rem 0.65rem' }}
                         >
-                          {isUserRated ? '✏️ Modify' : '⭐ Rate'}
+                          {isUserRated ? '✏️ Modify' : '⭐ Submit'}
                         </Button>
                       </td>
                     </tr>

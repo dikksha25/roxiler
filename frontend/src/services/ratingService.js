@@ -4,12 +4,13 @@ export const ratingService = {
   /**
    * Submit a new rating for a store (NORMAL_USER)
    */
-  async submitRating({ storeId, ratingValue, comment }) {
+  async submitRating({ storeId, rating, ratingValue, comment }) {
+    const sId = parseInt(storeId, 10);
+    const score = parseInt(rating !== undefined ? rating : ratingValue, 10);
+
     const res = await api.post('/ratings', {
-      storeId: parseInt(storeId, 10),
-      store_id: parseInt(storeId, 10),
-      ratingValue: parseInt(ratingValue, 10),
-      rating: parseInt(ratingValue, 10),
+      storeId: sId,
+      rating: score,
       comment: comment ? comment.trim() : null,
     });
     return res.data;
@@ -17,11 +18,14 @@ export const ratingService = {
 
   /**
    * Modify an existing rating for a store (NORMAL_USER)
+   * Targets PUT /api/v1/ratings/:storeId
    */
-  async modifyRating(ratingId, { ratingValue, comment }) {
-    const res = await api.patch(`/ratings/${ratingId}`, {
-      ratingValue: parseInt(ratingValue, 10),
-      rating: parseInt(ratingValue, 10),
+  async modifyRating(storeId, { rating, ratingValue, comment }) {
+    const sId = parseInt(storeId, 10);
+    const score = parseInt(rating !== undefined ? rating : ratingValue, 10);
+
+    const res = await api.put(`/ratings/${sId}`, {
+      rating: score,
       comment: comment ? comment.trim() : null,
     });
     return res.data;
