@@ -40,8 +40,8 @@ export const Navbar = ({ currentRoute, onNavigate }) => {
           </span>
         </div>
 
-        {/* Navigation Links & Action Controls */}
-        <nav style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+        {/* Navigation Links & Controls */}
+        <nav style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
           <button
             onClick={() => onNavigate('home')}
             className={`clay-nav-link ${currentRoute === 'home' ? 'active' : ''}`}
@@ -55,9 +55,6 @@ export const Navbar = ({ currentRoute, onNavigate }) => {
           >
             Stores Directory
           </button>
-
-          {/* Tactile Day / Cyber Clay Switch */}
-          <ThemeToggle />
 
           {isAuthenticated && user ? (
             <>
@@ -73,29 +70,26 @@ export const Navbar = ({ currentRoute, onNavigate }) => {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.85rem',
-                  marginLeft: '0.25rem',
-                  paddingLeft: '0.75rem',
-                  borderLeft: '2px solid rgba(124, 58, 237, 0.12)',
+                  marginLeft: '0.5rem',
+                  paddingLeft: '0.85rem',
+                  borderLeft: '2px solid var(--border-subtle)',
                 }}
               >
                 <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.15rem' }}>
                   <div
                     style={{
-                      fontSize: '0.88rem',
+                      fontSize: '0.9rem',
                       fontWeight: 800,
                       color: 'var(--clay-text-primary)',
                       fontFamily: 'var(--font-heading)',
-                      maxWidth: '140px',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
                     }}
-                    title={user.name}
                   >
                     {user.name}
                   </div>
                   <Badge role={user.role} />
                 </div>
+
+                <ThemeToggle />
 
                 <button
                   onClick={handleLogout}
@@ -107,7 +101,8 @@ export const Navbar = ({ currentRoute, onNavigate }) => {
               </div>
             </>
           ) : (
-            <div style={{ display: 'flex', gap: '0.65rem', marginLeft: '0.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginLeft: '0.5rem' }}>
+              <ThemeToggle />
               <button
                 onClick={() => onNavigate('login')}
                 className="clay-btn clay-btn-secondary clay-btn-sm"

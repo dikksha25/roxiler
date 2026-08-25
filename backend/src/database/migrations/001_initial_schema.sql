@@ -92,9 +92,9 @@ CREATE TABLE IF NOT EXISTS ratings (
 CREATE INDEX IF NOT EXISTS idx_ratings_store_id ON ratings (store_id);
 CREATE INDEX IF NOT EXISTS idx_ratings_user_id ON ratings (user_id);
 CREATE INDEX IF NOT EXISTS idx_ratings_created_at ON ratings (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ratings_owner_replied_at ON ratings (owner_replied_at DESC);
 CREATE INDEX IF NOT EXISTS idx_ratings_store_rating_val ON ratings (store_id, rating_value);
 CREATE INDEX IF NOT EXISTS idx_ratings_user_store_val ON ratings (user_id, store_id, rating_value);
-CREATE INDEX IF NOT EXISTS idx_ratings_owner_replied_at ON ratings (owner_replied_at DESC) WHERE owner_reply IS NOT NULL;
 
 -- 6. Trigger Functions & Business Rules
 

@@ -11,10 +11,10 @@ const DEV_SEEDED_RATINGS = [
     store_name: 'FreshMart Supermarket & Organics',
     rating_value: 5,
     comment: 'Exceptional fresh organic produce and friendly staff!',
-    owner_reply: 'Thank you so much Sarah! Our team works diligently to stock farm-fresh organics daily.',
-    owner_replied_at: new Date('2026-01-06T10:00:00.000Z'),
+    owner_reply: 'Thank you so much Sarah! We take great pride in our fresh organic farm produce.',
+    owner_replied_at: new Date('2026-01-05T12:00:00.000Z'),
     created_at: new Date('2026-01-05T10:00:00.000Z'),
-    updated_at: new Date('2026-01-06T10:00:00.000Z'),
+    updated_at: new Date('2026-01-05T12:00:00.000Z'),
   },
   {
     id: 2,
@@ -26,10 +26,10 @@ const DEV_SEEDED_RATINGS = [
     store_name: 'Nexus Specialty Coffee & Bakery Lounge',
     rating_value: 5,
     comment: 'Best pour-over coffee in the city.',
-    owner_reply: 'Appreciate the kind words! Glad you enjoyed our single-origin roast.',
-    owner_replied_at: new Date('2026-01-07T11:00:00.000Z'),
+    owner_reply: 'Glad you loved the Ethiopian roast! Stop by again soon for our new cold brew.',
+    owner_replied_at: new Date('2026-01-06T13:00:00.000Z'),
     created_at: new Date('2026-01-06T11:00:00.000Z'),
-    updated_at: new Date('2026-01-07T11:00:00.000Z'),
+    updated_at: new Date('2026-01-06T13:00:00.000Z'),
   },
   {
     id: 3,
@@ -41,10 +41,10 @@ const DEV_SEEDED_RATINGS = [
     store_name: 'FreshMart Supermarket & Organics',
     rating_value: 4,
     comment: 'Great selection, parking can get busy during peak hours.',
-    owner_reply: 'Thanks for visiting David! We are currently expanding our weekend parking spots.',
-    owner_replied_at: new Date('2026-01-08T12:00:00.000Z'),
+    owner_reply: null,
+    owner_replied_at: null,
     created_at: new Date('2026-01-07T12:00:00.000Z'),
-    updated_at: new Date('2026-01-08T12:00:00.000Z'),
+    updated_at: new Date('2026-01-07T12:00:00.000Z'),
   },
 ];
 
@@ -65,6 +65,24 @@ class RatingRepository extends BaseRepository {
   constructor() {
     super('ratings');
     this.inMemoryRatings = [...DEV_SEEDED_RATINGS];
+  }
+
+  async findById(id) {
+    const rId = parseInt(id, 10);
+    try {
+      const res = await this.query(
+        `SELECT r.id, r.user_id, r.store_id, r.rating_value, r.comment, r.owner_reply, r.owner_replied_at, r.created_at, r.updated_at,
+                s.owner_id, s.name AS store_name
+         FROM ratings r
+         JOIN stores s ON r.store_id = s.id
+         WHERE r.id = $1`,
+        [rId]
+      );
+      return res.rows[0] || null;
+    } catch (err) {
+      const found = this.inMemoryRatings.find((r) => r.id === rId);
+      return found ? { ...found } : null;
+    }
   }
 
   async findByUserAndStore(userId, storeId) {
@@ -174,12 +192,9 @@ class RatingRepository extends BaseRepository {
     }
   }
 
-  /**
-   * Save store owner's response reply to a specific customer review
-   */
-  async replyToRating(ratingId, replyText) {
-    const rId = parseInt(ratingId, 10);
-    const text = replyText ? replyText.trim() : null;
+  async replyToRating(id, replyText) {
+    const rId = parseInt(id, 10);
+    const reply = replyText ? replyText.trim() : null;
 
     try {
       const res = await this.query(
@@ -189,13 +204,13 @@ class RatingRepository extends BaseRepository {
              updated_at = NOW()
          WHERE id = $2
          RETURNING id, user_id, store_id, rating_value, comment, owner_reply, owner_replied_at, created_at, updated_at`,
-        [text, rId]
+        [reply, rId]
       );
       return res.rows[0] || null;
     } catch (err) {
       const existing = this.inMemoryRatings.find((r) => r.id === rId);
       if (existing) {
-        existing.owner_reply = text;
+        existing.owner_reply = reply;
         existing.owner_replied_at = new Date();
         existing.updated_at = new Date();
         return { ...existing };
@@ -414,7 +429,7 @@ class RatingRepository extends BaseRepository {
   }
 
   /**
-   * Find ratings for a store with customer/user details
+   * Find ratings for a store with customer/user details (Name, Email, Address)
    */
   async findByStoreIdWithUserDetails(storeId) {
     const sId = parseInt(storeId, 10);
@@ -573,22 +588,6 @@ class RatingRepository extends BaseRepository {
       return res.rows;
     } catch (err) {
       return this.inMemoryRatings.filter((r) => r.user_id === uId);
-    }
-  }
-
-  async findById(ratingId) {
-    const rId = parseInt(ratingId, 10);
-    try {
-      const res = await this.query(
-        `SELECT id, user_id, store_id, rating_value, comment, owner_reply, owner_replied_at, created_at, updated_at
-         FROM ratings
-         WHERE id = $1`,
-        [rId]
-      );
-      return res.rows[0] || null;
-    } catch (err) {
-      const found = this.inMemoryRatings.find((r) => r.id === rId);
-      return found ? { ...found } : null;
     }
   }
 

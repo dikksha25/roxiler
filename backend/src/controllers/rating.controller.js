@@ -83,9 +83,14 @@ const getStoreRatings = asyncHandler(async (req, res) => {
 
 const replyToRating = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const replyText = req.body.reply || req.body.comment;
-  const updated = await ratingService.replyToRating(req.user, id, replyText);
-  return ApiResponse.success(res, 'Reply posted successfully', updated);
+  const { reply, replyText } = req.body;
+  const updated = await ratingService.replyToRating(
+    req.user.id,
+    id,
+    { reply: reply !== undefined ? reply : replyText },
+    req.user.role
+  );
+  return ApiResponse.success(res, 'Merchant reply published successfully', updated);
 });
 
 module.exports = {

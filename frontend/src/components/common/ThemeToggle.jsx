@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTheme } from '../../hooks/useTheme';
+import { useTheme } from '../../context/ThemeContext';
 
 export const ThemeToggle = ({ className = '', style = {} }) => {
   const { theme, toggleTheme, isDark } = useTheme();
@@ -10,23 +10,17 @@ export const ThemeToggle = ({ className = '', style = {} }) => {
       onClick={toggleTheme}
       className={`clay-theme-toggle ${className}`}
       style={style}
-      aria-label={`Switch to ${isDark ? 'Light Day Candy' : 'Dark Cyber Clay'} theme`}
-      title={`Switch to ${isDark ? 'Light Day Candy ☀️' : 'Dark Cyber Clay 🌙'} mode`}
+      aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
+      title={`Switch to ${isDark ? 'Light (Day Candy ☀️)' : 'Dark (Cyber Clay 🌙)'} Mode`}
     >
-      <div className="clay-theme-track">
-        <div className={`clay-theme-thumb ${isDark ? 'thumb-dark' : 'thumb-light'}`}>
-          {isDark ? (
-            <span className="theme-icon moon-icon">🌙</span>
-          ) : (
-            <span className="theme-icon sun-icon">☀️</span>
-          )}
-        </div>
-      </div>
+      <span className="clay-theme-track">
+        <span className={`clay-theme-thumb ${isDark ? 'dark' : 'light'}`}>
+          {isDark ? '🌙' : '☀️'}
+        </span>
+      </span>
       <span className="clay-theme-label">
         {isDark ? 'Cyber Clay' : 'Day Candy'}
       </span>
     </button>
   );
 };
-
-export default ThemeToggle;

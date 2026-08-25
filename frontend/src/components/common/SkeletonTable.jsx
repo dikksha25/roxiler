@@ -1,32 +1,29 @@
 import React from 'react';
 
-export const SkeletonTable = ({ rows = 5, columns = 5 }) => {
+export const SkeletonTable = ({ rows = 5, cols = 5 }) => {
   return (
-    <div className="clay-table-wrapper" style={{ overflow: 'hidden' }}>
+    <div className="clay-table-wrapper" style={{ overflow: 'hidden', padding: '1rem' }}>
       <table className="clay-table">
         <thead>
           <tr>
-            {Array.from({ length: columns }).map((_, cIdx) => (
-              <th key={`sk-th-${cIdx}`}>
-                <div
-                  className="clay-skeleton"
-                  style={{ height: '18px', width: `${60 + (cIdx % 3) * 20}%`, borderRadius: '8px' }}
-                />
+            {Array.from({ length: cols }, (_, cIdx) => (
+              <th key={`skel-th-${cIdx}`}>
+                <div className="clay-shimmer" style={{ height: '16px', width: '70%', borderRadius: '6px' }} />
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {Array.from({ length: rows }).map((_, rIdx) => (
-            <tr key={`sk-tr-${rIdx}`}>
-              {Array.from({ length: columns }).map((_, cIdx) => (
-                <td key={`sk-td-${rIdx}-${cIdx}`}>
+          {Array.from({ length: rows }, (_, rIdx) => (
+            <tr key={`skel-tr-${rIdx}`}>
+              {Array.from({ length: cols }, (_, cIdx) => (
+                <td key={`skel-td-${rIdx}-${cIdx}`}>
                   <div
-                    className="clay-skeleton"
+                    className="clay-shimmer"
                     style={{
-                      height: '20px',
-                      width: cIdx === 0 ? '40%' : cIdx === columns - 1 ? '70%' : `${50 + ((rIdx + cIdx) % 4) * 15}%`,
-                      borderRadius: '10px',
+                      height: '18px',
+                      width: cIdx === 0 ? '40%' : cIdx === 1 ? '75%' : '60%',
+                      borderRadius: '8px',
                     }}
                   />
                 </td>
@@ -38,5 +35,3 @@ export const SkeletonTable = ({ rows = 5, columns = 5 }) => {
     </div>
   );
 };
-
-export default SkeletonTable;

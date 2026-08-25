@@ -3,26 +3,25 @@ import { dashboardService } from '../../services/dashboardService';
 import { Card } from '../common/Card';
 import { Button } from '../common/Button';
 import { Alert } from '../common/Alert';
-import { SkeletonCard } from '../common/SkeletonCard';
+import { Spinner } from '../common/Spinner';
 import { UserManagementPage } from './UserManagementPage';
 import { StoreManagementPage } from './StoreManagementPage';
 
-const formatRelativeTime = (dateStr) => {
-  if (!dateStr) return 'Just now';
+// Helper for human-readable relative time formatting
+const formatRelativeTime = (timestamp) => {
+  if (!timestamp) return 'Recently';
   const now = new Date();
-  const date = new Date(dateStr);
-  const diffMs = now.getTime() - date.getTime();
-  const diffSec = Math.floor(diffMs / 1000);
-  const diffMin = Math.floor(diffSec / 60);
-  const diffHour = Math.floor(diffMin / 60);
-  const diffDay = Math.floor(diffHour / 24);
+  const date = new Date(timestamp);
+  const diffMs = now - date;
+  const diffMinutes = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMinutes / 60);
+  const diffDays = Math.floor(diffHours / 24);
 
-  if (diffSec < 60) return 'Just now';
-  if (diffMin < 60) return `${diffMin} min${diffMin === 1 ? '' : 's'} ago`;
-  if (diffHour < 24) return `${diffHour} hr${diffHour === 1 ? '' : 's'} ago`;
-  if (diffDay === 1) return 'Yesterday';
-  if (diffDay < 30) return `${diffDay} days ago`;
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  if (diffMinutes < 1) return 'Just now';
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays === 1) return 'Yesterday';
+  return `${diffDays}d ago`;
 };
 
 export const AdminDashboard = ({ onNavigate }) => {
@@ -52,26 +51,23 @@ export const AdminDashboard = ({ onNavigate }) => {
 
   if (loading) {
     return (
-      <div className="clay-page">
-        <div className="clay-container">
-          <div className="clay-grid-4" style={{ marginBottom: '2.5rem' }}>
-            <SkeletonCard count={4} />
-          </div>
-        </div>
+      <div style={{ textAlign: 'center', padding: '5rem 1rem' }}>
+        <Spinner size={48} />
+        <p style={{ marginTop: '1.25rem', color: 'var(--clay-text-muted)', fontSize: '1rem', fontWeight: 600 }}>
+          Computing real-time platform metrics &amp; telemetry...
+        </p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="clay-page">
-        <div className="clay-container" style={{ maxWidth: '600px' }}>
-          <Alert type="error" message={error} />
-          <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-            <Button variant="primary" onClick={fetchStats}>
-              🔄 Retry Loading
-            </Button>
-          </div>
+      <div style={{ maxWidth: '600px', margin: '2rem auto' }}>
+        <Alert type="error" message={error} />
+        <div style={{ textAlign: 'center' }}>
+          <Button variant="primary" onClick={fetchStats}>
+            🔄 Retry Loading
+          </Button>
         </div>
       </div>
     );
@@ -102,7 +98,7 @@ export const AdminDashboard = ({ onNavigate }) => {
               <span className="clay-badge clay-badge-purple">SUPER_ADMIN</span>
             </div>
             <p style={{ color: 'var(--clay-text-muted)', margin: 0, fontSize: '1rem' }}>
-              System metrics, account management, and commercial store registry.
+              System-wide metrics, sector distribution, user directory, and store registry.
             </p>
           </div>
 
@@ -145,7 +141,7 @@ export const AdminDashboard = ({ onNavigate }) => {
               {stats.totalStores || 0}
             </div>
             <div style={{ fontSize: '0.82rem', color: 'var(--clay-success)', marginTop: '0.75rem', fontWeight: 700 }}>
-              ✓ All Registered &amp; Listed
+              ✓ All Registered &amp; Verified
             </div>
           </Card>
 
@@ -213,25 +209,23 @@ export const AdminDashboard = ({ onNavigate }) => {
             onClick={() => setActiveTab('ratings')}
             className={`clay-btn ${activeTab === 'ratings' ? 'clay-btn-primary' : 'clay-btn-secondary'} clay-btn-sm`}
           >
-            ⭐ Recent Ratings Feed ({stats.totalRatings || 0})
+            ⭐ Live Activity Feed ({stats.totalRatings || 0})
           </button>
         </div>
 
-        {/* TAB 1: OVERVIEW */}
+        {/* TAB 1: OVERVIEW & SECTOR DISTRIBUTION */}
         {activeTab === 'overview' && (
           <div className="clay-grid-2" style={{ gap: '2rem' }}>
-            {/* Role Distribution Breakdown */}
+            {/* Role Distribution Card */}
             <Card>
-              <h3 style={{ fontSize: '1.35rem', fontWeight: 900, marginBottom: '1.25rem' }}>
-                👥 Role Distribution Breakdown
-              </h3>
+              <h3 style={{ fontSize: '1.35rem', fontWeight: 900, marginBottom: '1.25rem' }}>👥 Role Distribution Breakdown</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.92rem', marginBottom: '0.45rem', fontWeight: 700 }}>
                     <span>🛡️ System Administrators</span>
                     <span style={{ color: 'var(--clay-accent-primary)' }}>{roleBreakdown.adminCount || 0}</span>
                   </div>
-                  <div style={{ height: '14px', background: 'var(--clay-input-bg)', borderRadius: '9999px', boxShadow: 'var(--shadow-clay-pressed)', overflow: 'hidden' }}>
+                  <div style={{ height: '14px', background: 'var(--clay-recessed-bg)', borderRadius: '9999px', boxShadow: 'var(--shadow-clay-pressed)', overflow: 'hidden' }}>
                     <div style={{ height: '100%', background: 'var(--clay-gradient-primary)', width: `${((roleBreakdown.adminCount || 0) / (stats.totalUsers || 1)) * 100}%`, borderRadius: '9999px' }} />
                   </div>
                 </div>
@@ -241,7 +235,7 @@ export const AdminDashboard = ({ onNavigate }) => {
                     <span>🏪 Store Owners</span>
                     <span style={{ color: 'var(--clay-accent-secondary)' }}>{roleBreakdown.ownerCount || 0}</span>
                   </div>
-                  <div style={{ height: '14px', background: 'var(--clay-input-bg)', borderRadius: '9999px', boxShadow: 'var(--shadow-clay-pressed)', overflow: 'hidden' }}>
+                  <div style={{ height: '14px', background: 'var(--clay-recessed-bg)', borderRadius: '9999px', boxShadow: 'var(--shadow-clay-pressed)', overflow: 'hidden' }}>
                     <div style={{ height: '100%', background: 'var(--clay-gradient-secondary)', width: `${((roleBreakdown.ownerCount || 0) / (stats.totalUsers || 1)) * 100}%`, borderRadius: '9999px' }} />
                   </div>
                 </div>
@@ -251,31 +245,32 @@ export const AdminDashboard = ({ onNavigate }) => {
                     <span>⭐ Normal Users (Consumers)</span>
                     <span style={{ color: 'var(--clay-accent-tertiary)' }}>{roleBreakdown.userCount || 0}</span>
                   </div>
-                  <div style={{ height: '14px', background: 'var(--clay-input-bg)', borderRadius: '9999px', boxShadow: 'var(--shadow-clay-pressed)', overflow: 'hidden' }}>
+                  <div style={{ height: '14px', background: 'var(--clay-recessed-bg)', borderRadius: '9999px', boxShadow: 'var(--shadow-clay-pressed)', overflow: 'hidden' }}>
                     <div style={{ height: '100%', background: 'var(--clay-gradient-tertiary)', width: `${((roleBreakdown.userCount || 0) / (stats.totalUsers || 1)) * 100}%`, borderRadius: '9999px' }} />
                   </div>
                 </div>
               </div>
             </Card>
 
-            {/* Sector / Category Breakdown Chart */}
+            {/* Sector / Retail Category Visual Chart */}
             <Card>
-              <h3 style={{ fontSize: '1.35rem', fontWeight: 900, marginBottom: '1.25rem' }}>
-                🏬 Commercial Sectors Breakdown
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.65rem 0.85rem', background: 'var(--clay-input-bg)', borderRadius: '16px', boxShadow: 'var(--shadow-clay-pressed)' }}>
-                  <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>🥑 Grocery &amp; Organics</span>
-                  <span className="clay-badge clay-badge-green">1 Store (33%)</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.65rem 0.85rem', background: 'var(--clay-input-bg)', borderRadius: '16px', boxShadow: 'var(--shadow-clay-pressed)' }}>
-                  <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>☕ Cafe &amp; Bakery Lounge</span>
-                  <span className="clay-badge clay-badge-amber">1 Store (33%)</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.65rem 0.85rem', background: 'var(--clay-input-bg)', borderRadius: '16px', boxShadow: 'var(--shadow-clay-pressed)' }}>
-                  <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>⚡ Tech &amp; Smart Devices</span>
-                  <span className="clay-badge clay-badge-purple">1 Store (33%)</span>
-                </div>
+              <h3 style={{ fontSize: '1.35rem', fontWeight: 900, marginBottom: '1.25rem' }}>🛍️ Retail Sector Breakdown</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.95rem' }}>
+                {[
+                  { sector: 'Grocery & Organics', icon: '🥑', count: 1, color: 'var(--clay-gradient-emerald)', pct: 34 },
+                  { sector: 'Cafe & Dining', icon: '☕', count: 1, color: 'var(--clay-gradient-amber)', pct: 33 },
+                  { sector: 'Tech & Electronics', icon: '⚡', count: 1, color: 'var(--clay-gradient-primary)', pct: 33 },
+                ].map((s) => (
+                  <div key={s.sector}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '0.35rem', fontWeight: 700 }}>
+                      <span>{s.icon} {s.sector}</span>
+                      <span style={{ color: 'var(--clay-text-muted)' }}>{s.count} Store ({s.pct}%)</span>
+                    </div>
+                    <div style={{ height: '12px', background: 'var(--clay-recessed-bg)', borderRadius: '9999px', boxShadow: 'var(--shadow-clay-pressed)', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', background: s.color, width: `${s.pct}%`, borderRadius: '9999px' }} />
+                    </div>
+                  </div>
+                ))}
               </div>
             </Card>
           </div>
@@ -287,20 +282,20 @@ export const AdminDashboard = ({ onNavigate }) => {
         {/* TAB 3: STORE MANAGEMENT */}
         {activeTab === 'stores' && <StoreManagementPage />}
 
-        {/* TAB 4: RATINGS FEED WITH RELATIVE TIMESTAMPS */}
+        {/* TAB 4: LIVE RATINGS ACTIVITY STREAM WITH RELATIVE TIMESTAMPS */}
         {activeTab === 'ratings' && (
           <Card>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
               <div>
                 <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.35rem', fontWeight: 900 }}>
-                  ⭐ Live Consumer Activity Feed
+                  ⚡ Live Community Activity Stream
                 </h3>
-                <p style={{ margin: 0, color: 'var(--clay-text-muted)', fontSize: '0.88rem' }}>
-                  Real-time ratings stream from across the platform
+                <p style={{ margin: 0, color: 'var(--clay-text-muted)', fontSize: '0.9rem' }}>
+                  Real-time consumer reviews with verified ratings and merchant response status.
                 </p>
               </div>
               <span className="clay-badge clay-badge-purple">
-                Total: {recentRatings.length} Recent Reviews
+                Total Reviews: {stats.totalRatings || 0}
               </span>
             </div>
 
@@ -312,31 +307,42 @@ export const AdminDashboard = ({ onNavigate }) => {
                   <div
                     key={r.id}
                     style={{
-                      background: 'var(--clay-input-bg)',
+                      background: 'var(--clay-recessed-bg)',
                       boxShadow: 'var(--shadow-clay-pressed)',
                       borderRadius: 'var(--radius-clay-inner)',
                       padding: '1.25rem 1.5rem',
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                        <strong style={{ color: 'var(--clay-text-primary)' }}>{r.user_name || `User #${r.user_id}`}</strong>
-                        <span style={{ color: 'var(--clay-text-dim)', fontSize: '0.85rem' }}>rated</span>
-                        <strong style={{ color: 'var(--clay-accent-primary)' }}>{r.store_name || `Store #${r.store_id}`}</strong>
-                        <span style={{ color: 'var(--clay-text-dim)', fontSize: '0.8rem', marginLeft: '0.5rem' }}>
-                          &bull; {formatRelativeTime(r.created_at)}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span className="clay-badge clay-badge-blue" style={{ fontSize: '0.75rem' }}>
+                          👤 {r.user_name || `User #${r.user_id}`}
+                        </span>
+                        <span style={{ color: 'var(--clay-text-dim)', fontSize: '0.85rem' }}>reviewed</span>
+                        <span className="clay-badge clay-badge-pink" style={{ fontSize: '0.75rem' }}>
+                          🏪 {r.store_name || `Store #${r.store_id}`}
                         </span>
                       </div>
-                      <div style={{ color: 'var(--clay-warning)', fontWeight: 900, fontSize: '1.15rem' }}>
-                        {'★'.repeat(r.rating_value || r.rating || 5)}{'☆'.repeat(5 - (r.rating_value || r.rating || 5))}
-                        <span style={{ marginLeft: '0.45rem', color: 'var(--clay-text-muted)', fontSize: '0.9rem', fontWeight: 700 }}>
-                          ({r.rating_value || r.rating}/5)
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <div style={{ color: 'var(--clay-warning)', fontWeight: 900, fontSize: '1.15rem' }}>
+                          {'★'.repeat(r.rating_value || r.rating || 5)}{'☆'.repeat(5 - (r.rating_value || r.rating || 5))}
+                          <span style={{ marginLeft: '0.45rem', color: 'var(--clay-text-muted)', fontSize: '0.9rem', fontWeight: 700 }}>
+                            ({r.rating_value || r.rating}/5)
+                          </span>
+                        </div>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--clay-text-dim)', fontWeight: 600 }}>
+                          • {formatRelativeTime(r.created_at)}
                         </span>
                       </div>
                     </div>
-                    {r.comment && (
+
+                    {r.comment ? (
                       <p style={{ color: 'var(--clay-text-primary)', fontSize: '0.92rem', margin: '0.35rem 0 0 0', fontStyle: 'italic' }}>
                         "{r.comment}"
+                      </p>
+                    ) : (
+                      <p style={{ color: 'var(--clay-text-dim)', fontSize: '0.85rem', margin: '0.35rem 0 0 0' }}>
+                        Customer gave star score without written text.
                       </p>
                     )}
                   </div>
@@ -349,5 +355,3 @@ export const AdminDashboard = ({ onNavigate }) => {
     </div>
   );
 };
-
-export default AdminDashboard;

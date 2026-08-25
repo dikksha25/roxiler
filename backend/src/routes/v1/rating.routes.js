@@ -31,6 +31,15 @@ router.get(
   ratingController.getOwnerRatings
 );
 
+// STORE_OWNER & SYSTEM_ADMIN: Reply to a customer review
+router.post(
+  '/:id/reply',
+  authenticate,
+  authorize(ROLES.STORE_OWNER, ROLES.SYSTEM_ADMIN),
+  validate(replyToRatingValidator),
+  ratingController.replyToRating
+);
+
 // NORMAL_USER: View my submitted ratings
 router.get(
   '/my-ratings',
@@ -45,15 +54,6 @@ router.get(
   authenticate,
   authorize(ROLES.STORE_OWNER, ROLES.SYSTEM_ADMIN),
   ratingController.getStoreRatings
-);
-
-// STORE_OWNER & SYSTEM_ADMIN: Reply to customer review
-router.post(
-  '/:id/reply',
-  authenticate,
-  authorize(ROLES.STORE_OWNER, ROLES.SYSTEM_ADMIN),
-  validate(replyToRatingValidator),
-  ratingController.replyToRating
 );
 
 // NORMAL_USER: Submit rating for a store

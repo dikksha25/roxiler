@@ -16,19 +16,26 @@ const runMigration = async () => {
 
   console.log(`✅ Target Database: [${health.database}]`);
 
-  const schemaFile = path.resolve(__dirname, '../migrations/001_initial_schema.sql');
-  if (!fs.existsSync(schemaFile)) {
-    console.error(`❌ Migration schema file not found at: ${schemaFile}`);
+  const migrationsDir = path.resolve(__dirname, '../migrations');
+  if (!fs.existsSync(migrationsDir)) {
+    console.error(`❌ Migrations directory not found at: ${migrationsDir}`);
     process.exit(1);
   }
 
-  try {
-    const schemaSql = fs.readFileSync(schemaFile, 'utf-8');
-    console.log(`📄 Executing: ${path.basename(schemaFile)}...`);
+  const migrationFiles = fs.readdirSync(migrationsDir)
+    .filter((f) => f.endsWith('.sql'))
+    .sort();
 
-    await withTransaction(async (client) => {
-      await client.query(schemaSql);
-    });
+  try {
+    for (const file of migrationFiles) {
+      const filePath = path.join(migrationsDir, file);
+      const schemaSql = fs.readFileSync(filePath, 'utf-8');
+      console.log(`📄 Executing: ${file}...`);
+
+      await withTransaction(async (client) => {
+        await client.query(schemaSql);
+      });
+    }
 
     // Verify created tables
     const res = await pool.query(`

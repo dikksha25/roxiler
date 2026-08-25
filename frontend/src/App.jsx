@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { Navbar } from './components/layout/Navbar';
 import { HomePage } from './pages/HomePage';
 import { StoresPage } from './pages/StoresPage';
@@ -93,7 +93,7 @@ export function App() {
           >
             <div className="clay-container">
               <p style={{ margin: 0, fontWeight: 600 }}>
-                &copy; {new Date().getFullYear()} <span style={{ color: 'var(--clay-accent-primary)', fontWeight: 800, fontFamily: 'var(--font-heading)' }}>StoreRate</span> — High-Fidelity Dual-Theme Claymorphism.
+                &copy; {new Date().getFullYear()} <span style={{ color: 'var(--clay-accent-primary)', fontWeight: 800, fontFamily: 'var(--font-heading)' }}>StoreRate</span> — High-Fidelity Dual-Theme Experience.
               </p>
             </div>
           </footer>

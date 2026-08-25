@@ -198,29 +198,45 @@ class RatingService {
   }
 
   /**
-   * Store Owner replies to a specific customer rating
+   * Reply to a customer review (STORE_OWNER or SYSTEM_ADMIN)
    */
-  async replyToRating(requestingUser, ratingId, replyText) {
-    const rId = parseInt(ratingId, 10);
-    if (isNaN(rId) || rId < 1) {
+  async replyToRating(userId, ratingId, { reply, replyText }, userRole = null) {
+    const targetRatingId = parseInt(ratingId, 10);
+    const message = reply !== undefined ? reply : replyText;
+
+    if (isNaN(targetRatingId) || targetRatingId < 1) {
       throw new BadRequestError('Valid rating ID is required.');
     }
 
-    const rating = await ratingRepository.findById(rId);
-    if (!rating) {
-      throw new NotFoundError(`Rating with ID ${rId} was not found.`);
+    if (!message || !message.toString().trim()) {
+      throw new BadRequestError('Reply message cannot be empty.');
     }
 
-    // Authorization: STORE_OWNER can only reply to reviews for their owned stores
-    if (requestingUser.role === 'STORE_OWNER') {
-      const store = await storeRepository.findDetailById(rating.store_id);
-      if (!store || store.owner_id !== parseInt(requestingUser.id, 10)) {
+    const trimmedReply = message.toString().trim();
+    if (trimmedReply.length > 500) {
+      throw new BadRequestError('Reply cannot exceed 500 characters.');
+    }
+
+    // 1. Find the target rating
+    const existingRating = await ratingRepository.findById(targetRatingId);
+    if (!existingRating) {
+      throw new NotFoundError(`Rating with ID ${targetRatingId} was not found.`);
+    }
+
+    // 2. Object-level authorization: STORE_OWNER can only reply to reviews on their own store
+    if (userRole !== 'SYSTEM_ADMIN') {
+      const store = await storeRepository.findDetailById(existingRating.store_id);
+      if (!store) {
+        throw new NotFoundError(`Associated store was not found.`);
+      }
+      if (store.owner_id !== parseInt(userId, 10)) {
         const ForbiddenError = require('../errors/forbidden.error');
-        throw new ForbiddenError('You do not have permission to reply to reviews for another merchant\'s store.');
+        throw new ForbiddenError('You do not have permission to reply to customer reviews for another merchant\'s store.');
       }
     }
 
-    const updated = await ratingRepository.replyToRating(rId, replyText);
+    // 3. Update the rating with owner reply
+    const updated = await ratingRepository.replyToRating(targetRatingId, trimmedReply);
     return updated;
   }
 }

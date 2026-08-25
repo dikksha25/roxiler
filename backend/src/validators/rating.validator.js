@@ -126,16 +126,16 @@ const listOwnerRatingsValidator = [
 const replyToRatingValidator = [
   param('id')
     .isInt({ min: 1 })
-    .withMessage('Valid rating ID is required'),
+    .withMessage('Valid rating ID parameter is required'),
 
-  body()
+  body('reply')
     .custom((value, { req }) => {
-      const replyText = req.body.reply || req.body.comment;
-      if (!replyText || !replyText.trim()) {
+      const text = req.body.reply !== undefined ? req.body.reply : req.body.replyText;
+      if (!text || !text.toString().trim()) {
         throw new Error('Reply message cannot be empty');
       }
-      if (replyText.trim().length > 500) {
-        throw new Error('Reply message cannot exceed 500 characters');
+      if (text.toString().trim().length > 500) {
+        throw new Error('Reply cannot exceed 500 characters');
       }
       return true;
     }),

@@ -21,19 +21,19 @@ const runMigrations = async () => {
   console.log(`✅ Connected to database: [${health.database}]`);
 
   try {
-    // 1. Execute All Schema Migrations in Sorted Sequence
-    const migrationsDir = path.join(__dirname, 'migrations');
-    const migrationFiles = fs.readdirSync(migrationsDir)
-      .filter((file) => file.endsWith('.sql'))
-      .sort();
+    // 1. Execute Schema Migration
+    const schemaPath = path.join(__dirname, 'migrations', '001_initial_schema.sql');
+    console.log(`📄 Executing schema file: ${path.basename(schemaPath)}...`);
+    const schemaSql = fs.readFileSync(schemaPath, 'utf-8');
+    await pool.query(schemaSql);
 
-    for (const file of migrationFiles) {
-      const filePath = path.join(migrationsDir, file);
-      console.log(`📄 Executing migration file: ${file}...`);
-      const sqlContent = fs.readFileSync(filePath, 'utf-8');
-      await pool.query(sqlContent);
-      console.log(`✅ Migration ${file} applied successfully.`);
+    const repliesMigrationPath = path.join(__dirname, 'migrations', '004_owner_replies.sql');
+    if (fs.existsSync(repliesMigrationPath)) {
+      console.log(`📄 Executing migration: ${path.basename(repliesMigrationPath)}...`);
+      const repliesSql = fs.readFileSync(repliesMigrationPath, 'utf-8');
+      await pool.query(repliesSql);
     }
+    console.log('✅ Schema tables, enums, indexes, triggers, and views created successfully.');
 
     // 2. Hash real passwords and execute Seed Data
     console.log('🌱 Seeding initial platform data (Admin, Owners, Users, Stores, Ratings)...');
@@ -77,16 +77,16 @@ const runMigrations = async () => {
 
     await pool.query(`SELECT setval('stores_id_seq', (SELECT COALESCE(MAX(id), 1) FROM stores))`);
 
-    // Insert ratings with sample owner replies
+    // Insert ratings
     await pool.query(`
       INSERT INTO ratings (id, user_id, store_id, rating_value, comment, owner_reply, owner_replied_at)
       VALUES
-        (1, 4, 1, 5, 'Exceptional produce quality and friendly customer service! Clean aisles and fast checkout.', 'Thank you so much Sarah! Our team works diligently to stock farm-fresh organics daily.', NOW() - INTERVAL '1 day'),
-        (2, 5, 1, 4, 'Great organic selection. Prices are reasonable and parking was easy.', 'Thanks for visiting David! We are currently expanding our weekend parking spots.', NOW() - INTERVAL '12 hours'),
-        (3, 6, 1, 5, 'Always fresh veggies and wonderful bakery section. My go-to store!', NULL, NULL),
-        (4, 4, 2, 5, 'The pour-over Ethiopian roast is outstanding. Quiet workspace atmosphere with fast wifi.', 'Appreciate the kind words! Glad you enjoyed our single-origin roast.', NOW() - INTERVAL '2 days'),
+        (1, 4, 1, 5, 'Exceptional produce quality and friendly customer service! Clean aisles and fast checkout.', 'Thank you so much Sarah! We take great pride in our fresh organic farm produce.', NOW()),
+        (2, 5, 1, 4, 'Great organic selection. Prices are reasonable and parking was easy.', NULL, NULL),
+        (3, 6, 1, 5, 'Always fresh veggies and wonderful bakery section. My go-to store!', 'We truly appreciate your continued support and kind words, Amara!', NOW()),
+        (4, 4, 2, 5, 'The pour-over Ethiopian roast is outstanding. Quiet workspace atmosphere with fast wifi.', 'Glad you loved the Ethiopian roast! Stop by again soon for our new cold brew.', NOW()),
         (5, 5, 2, 5, 'Best croissants in the city and warm hospitality.', NULL, NULL),
-        (6, 6, 3, 4, 'Knowledgeable technicians helped me configure my laptop within 30 minutes.', NULL, NULL)
+        (6, 6, 3, 4, 'Knowledgeable technicians helped me configure my laptop within 30 minutes.', 'Thank you for choosing Apex! We are always ready to help.', NOW())
       ON CONFLICT (user_id, store_id) DO UPDATE SET
         rating_value = EXCLUDED.rating_value,
         comment = EXCLUDED.comment,

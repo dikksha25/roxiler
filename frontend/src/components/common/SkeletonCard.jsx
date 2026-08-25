@@ -4,79 +4,63 @@ import { Card } from './Card';
 export const SkeletonCard = ({ count = 3 }) => {
   return (
     <>
-      {Array.from({ length: count }).map((_, idx) => (
+      {Array.from({ length: count }, (_, idx) => (
         <Card
           key={`skeleton-card-${idx}`}
           style={{
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
-            position: 'relative',
             overflow: 'hidden',
+            minHeight: '380px',
+            position: 'relative',
           }}
         >
-          {/* Simulated Category Top Banner Shimmer */}
+          {/* Cover Banner Skeleton */}
           <div
-            className="clay-skeleton"
+            className="clay-shimmer"
             style={{
-              height: '52px',
+              height: '90px',
               borderRadius: '20px',
-              marginBottom: '1.25rem',
+              marginBottom: '1rem',
               width: '100%',
             }}
           />
 
           <div>
-            {/* Title & Icon Shimmer */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-              <div
-                className="clay-skeleton"
-                style={{ width: '44px', height: '44px', borderRadius: '50%' }}
-              />
-              <div style={{ flex: 1 }}>
-                <div
-                  className="clay-skeleton"
-                  style={{ height: '22px', width: '70%', borderRadius: '10px', marginBottom: '0.4rem' }}
-                />
-                <div
-                  className="clay-skeleton"
-                  style={{ height: '14px', width: '45%', borderRadius: '8px' }}
-                />
-              </div>
+            {/* Title & Badge */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+              <div className="clay-shimmer" style={{ width: '42px', height: '42px', borderRadius: '50%' }} />
+              <div className="clay-shimmer" style={{ height: '24px', width: '60%', borderRadius: '12px' }} />
             </div>
 
-            {/* Address Line Shimmer */}
-            <div
-              className="clay-skeleton"
-              style={{ height: '16px', width: '85%', borderRadius: '8px', marginBottom: '1.25rem' }}
-            />
+            {/* Address */}
+            <div className="clay-shimmer" style={{ height: '16px', width: '80%', borderRadius: '8px', marginBottom: '1.25rem' }} />
 
-            {/* Score Box Shimmer */}
+            {/* Rating Box Skeleton */}
             <div
-              className="clay-skeleton"
               style={{
-                height: '76px',
+                background: 'rgba(255, 255, 255, 0.4)',
                 borderRadius: 'var(--radius-clay-inner)',
-                marginBottom: '1.25rem',
+                padding: '1rem 1.15rem',
+                marginBottom: '1rem',
               }}
-            />
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <div className="clay-shimmer" style={{ height: '14px', width: '35%', borderRadius: '6px' }} />
+                <div className="clay-shimmer" style={{ height: '18px', width: '25%', borderRadius: '6px' }} />
+              </div>
+              <div className="clay-shimmer" style={{ height: '14px', width: '50%', borderRadius: '6px' }} />
+            </div>
 
-            {/* Status Badge Shimmer */}
-            <div
-              className="clay-skeleton"
-              style={{ height: '32px', borderRadius: '9999px', marginBottom: '1.25rem', width: '60%' }}
-            />
+            {/* Status Pill Skeleton */}
+            <div className="clay-shimmer" style={{ height: '32px', width: '100%', borderRadius: '9999px', marginBottom: '1.25rem' }} />
           </div>
 
-          {/* Bottom Button Shimmer */}
-          <div
-            className="clay-skeleton"
-            style={{ height: '48px', borderRadius: 'var(--radius-clay-btn)', width: '100%' }}
-          />
+          {/* Button Skeleton */}
+          <div className="clay-shimmer" style={{ height: '48px', width: '100%', borderRadius: 'var(--radius-clay-button)' }} />
         </Card>
       ))}
     </>
   );
 };
-
-export default SkeletonCard;

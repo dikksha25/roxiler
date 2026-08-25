@@ -9,21 +9,57 @@ import { SkeletonTable } from '../common/SkeletonTable';
 import { RateStoreModal } from './RateStoreModal';
 import { useDebounce } from '../../hooks/useDebounce';
 
-const getStoreCategory = (name = '', address = '') => {
-  const text = `${name} ${address}`.toLowerCase();
-  if (text.includes('tech') || text.includes('laptop') || text.includes('electronic') || text.includes('device') || text.includes('smart') || text.includes('silicon')) {
-    return { name: 'Tech & Electronics', bannerClass: 'banner-tech', icon: '⚡' };
+// Helper to determine category branding, gradient banner & icon
+const getStoreCategoryDetails = (storeName = '', storeEmail = '') => {
+  const text = `${storeName} ${storeEmail}`.toLowerCase();
+
+  if (text.includes('coffee') || text.includes('bakery') || text.includes('cafe') || text.includes('roast') || text.includes('bistro') || text.includes('dining')) {
+    return {
+      category: 'Cafe & Dining',
+      bannerClass: 'clay-banner-cafe',
+      icon: '☕',
+      tag: 'Artisan Roast',
+    };
   }
-  if (text.includes('coffee') || text.includes('bakery') || text.includes('cafe') || text.includes('restaurant') || text.includes('roast') || text.includes('croissant')) {
-    return { name: 'Cafe & Dining', bannerClass: 'banner-cafe', icon: '☕' };
+  if (text.includes('mart') || text.includes('market') || text.includes('organic') || text.includes('grocery') || text.includes('food')) {
+    return {
+      category: 'Grocery & Organics',
+      bannerClass: 'clay-banner-grocery',
+      icon: '🥑',
+      tag: 'Fresh Produce',
+    };
   }
-  if (text.includes('market') || text.includes('organic') || text.includes('grocery') || text.includes('fresh') || text.includes('produce')) {
-    return { name: 'Grocery & Mart', bannerClass: 'banner-grocery', icon: '🥑' };
+  if (text.includes('tech') || text.includes('electronic') || text.includes('device') || text.includes('smart') || text.includes('apex') || text.includes('digital')) {
+    return {
+      category: 'Tech & Electronics',
+      bannerClass: 'clay-banner-tech',
+      icon: '⚡',
+      tag: 'Smart Gadgets',
+    };
   }
-  if (text.includes('boutique') || text.includes('fashion') || text.includes('apparel') || text.includes('wear') || text.includes('style') || text.includes('artisan')) {
-    return { name: 'Fashion & Boutique', bannerClass: 'banner-fashion', icon: '✨' };
+  if (text.includes('fashion') || text.includes('boutique') || text.includes('cloth') || text.includes('apparel') || text.includes('style')) {
+    return {
+      category: 'Fashion & Boutique',
+      bannerClass: 'clay-banner-fashion',
+      icon: '✨',
+      tag: 'Curated Wear',
+    };
   }
-  return { name: 'Services & Wellness', bannerClass: 'banner-services', icon: '🌿' };
+  if (text.includes('wellness') || text.includes('spa') || text.includes('health') || text.includes('care')) {
+    return {
+      category: 'Services & Wellness',
+      bannerClass: 'clay-banner-wellness',
+      icon: '🌿',
+      tag: 'Self Care',
+    };
+  }
+
+  return {
+    category: 'Commercial Retail',
+    bannerClass: 'clay-banner-general',
+    icon: '🛍️',
+    tag: 'Verified Merchant',
+  };
 };
 
 export const UserStoreBrowsePage = () => {
@@ -36,12 +72,12 @@ export const UserStoreBrowsePage = () => {
   });
 
   const [viewMode, setViewMode] = useState('grid'); // grid, table
-  const [minRatingFilter, setMinRatingFilter] = useState('all'); // all, 4.0, 4.5
 
   // Filter input state
   const [searchInput, setSearchInput] = useState('');
   const [nameInput, setNameInput] = useState('');
   const [addressInput, setAddressInput] = useState('');
+  const [minRatingFilter, setMinRatingFilter] = useState('ALL'); // ALL, 4.0, 4.5, MY_RATED
 
   // Debounced values
   const debouncedSearch = useDebounce(searchInput, 300);
@@ -66,7 +102,7 @@ export const UserStoreBrowsePage = () => {
     debouncedSearch,
     debouncedName,
     debouncedAddress,
-    minRatingFilter !== 'all' ? minRatingFilter : null,
+    minRatingFilter !== 'ALL' ? minRatingFilter : null,
   ].filter(Boolean).length;
 
   const fetchStores = useCallback(async () => {
@@ -85,14 +121,24 @@ export const UserStoreBrowsePage = () => {
 
       const res = await storeService.browseStores(queryParams);
       if (res && res.data) {
-        let storeList = res.data.stores || [];
+        let fetchedStores = res.data.stores || [];
+
+        // Apply client-side quick score filter
         if (minRatingFilter === '4.0') {
-          storeList = storeList.filter((s) => parseFloat(s.overall_rating || s.average_rating || 0) >= 4.0);
+          fetchedStores = fetchedStores.filter(
+            (s) => parseFloat(s.overall_rating || s.average_rating || 0) >= 4.0
+          );
         } else if (minRatingFilter === '4.5') {
-          storeList = storeList.filter((s) => parseFloat(s.overall_rating || s.average_rating || 0) >= 4.5);
+          fetchedStores = fetchedStores.filter(
+            (s) => parseFloat(s.overall_rating || s.average_rating || 0) >= 4.5
+          );
+        } else if (minRatingFilter === 'MY_RATED') {
+          fetchedStores = fetchedStores.filter(
+            (s) => s.user_rating !== null && s.user_rating !== undefined
+          );
         }
 
-        setStores(storeList);
+        setStores(fetchedStores);
         if (res.pagination) {
           setPagination((prev) => ({
             ...prev,
@@ -120,7 +166,7 @@ export const UserStoreBrowsePage = () => {
   // Reset to page 1 on filter/sort change
   useEffect(() => {
     setPagination((prev) => ({ ...prev, page: 1 }));
-  }, [debouncedSearch, debouncedName, debouncedAddress, minRatingFilter, sort]);
+  }, [debouncedSearch, debouncedName, debouncedAddress, sort, minRatingFilter]);
 
   useEffect(() => {
     fetchStores();
@@ -137,7 +183,7 @@ export const UserStoreBrowsePage = () => {
     setSearchInput('');
     setNameInput('');
     setAddressInput('');
-    setMinRatingFilter('all');
+    setMinRatingFilter('ALL');
     setSort({ sortBy: 'rating', sortOrder: 'DESC' });
   };
 
@@ -213,7 +259,7 @@ export const UserStoreBrowsePage = () => {
 
         {/* Filter & Search Bar */}
         <Card style={{ marginBottom: '2rem', padding: '1.75rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', alignItems: 'flex-end' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem', alignItems: 'flex-end' }}>
             {/* Global Search */}
             <div>
               <label className="clay-label" style={{ fontSize: '0.85rem', display: 'block', marginBottom: '0.4rem' }}>
@@ -222,43 +268,10 @@ export const UserStoreBrowsePage = () => {
               <input
                 type="text"
                 className="clay-input"
-                placeholder="Search by name or address..."
+                placeholder="Search by store name, address..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
               />
-            </div>
-
-            {/* Rating Filter Chips */}
-            <div>
-              <label className="clay-label" style={{ fontSize: '0.85rem', display: 'block', marginBottom: '0.4rem' }}>
-                RATING FILTER
-              </label>
-              <div style={{ display: 'flex', gap: '0.45rem' }}>
-                <button
-                  type="button"
-                  className={`clay-badge ${minRatingFilter === 'all' ? 'clay-badge-purple' : ''}`}
-                  style={{ cursor: 'pointer', border: minRatingFilter === 'all' ? '2px solid var(--clay-accent-primary)' : '1px solid transparent' }}
-                  onClick={() => setMinRatingFilter('all')}
-                >
-                  All Stores
-                </button>
-                <button
-                  type="button"
-                  className={`clay-badge ${minRatingFilter === '4.0' ? 'clay-badge-amber' : ''}`}
-                  style={{ cursor: 'pointer', border: minRatingFilter === '4.0' ? '2px solid var(--clay-warning)' : '1px solid transparent' }}
-                  onClick={() => setMinRatingFilter('4.0')}
-                >
-                  ★ 4.0+
-                </button>
-                <button
-                  type="button"
-                  className={`clay-badge ${minRatingFilter === '4.5' ? 'clay-badge-green' : ''}`}
-                  style={{ cursor: 'pointer', border: minRatingFilter === '4.5' ? '2px solid var(--clay-success)' : '1px solid transparent' }}
-                  onClick={() => setMinRatingFilter('4.5')}
-                >
-                  ★ 4.5+ Top
-                </button>
-              </div>
             </div>
 
             {/* Sort Criteria */}
@@ -273,7 +286,7 @@ export const UserStoreBrowsePage = () => {
                   onChange={(e) => setSort((prev) => ({ ...prev, sortBy: e.target.value }))}
                   style={{ flex: 1 }}
                 >
-                  <option value="rating">Overall Rating</option>
+                  <option value="rating">Overall Rating (Highest)</option>
                   <option value="user_rating">My Submitted Rating</option>
                   <option value="name">Store Name</option>
                   <option value="address">Address</option>
@@ -298,7 +311,7 @@ export const UserStoreBrowsePage = () => {
                 onClick={() => setShowAdvancedFilters((prev) => !prev)}
                 style={{ flex: 1 }}
               >
-                {showAdvancedFilters ? '▲ Hide' : '▼ More Filters'}
+                {showAdvancedFilters ? '▲ Hide Filters' : '▼ Specific Filters'}
               </Button>
               {activeFiltersCount > 0 && (
                 <Button
@@ -311,14 +324,37 @@ export const UserStoreBrowsePage = () => {
             </div>
           </div>
 
+          {/* Quick Score Filter Chips */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap', marginTop: '1.25rem', paddingTop: '1rem', borderTop: '2px solid var(--border-subtle)' }}>
+            <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--clay-text-muted)', fontFamily: 'var(--font-heading)' }}>
+              Quick Rating Filter:
+            </span>
+            {[
+              { id: 'ALL', label: 'All Scores' },
+              { id: '4.0', label: '⭐ 4.0+ Stars' },
+              { id: '4.5', label: '🏆 4.5+ Top Tier' },
+              { id: 'MY_RATED', label: '✨ My Rated Stores' },
+            ].map((chip) => (
+              <button
+                key={chip.id}
+                type="button"
+                onClick={() => setMinRatingFilter(chip.id)}
+                className={`clay-btn clay-btn-sm ${minRatingFilter === chip.id ? 'clay-btn-primary' : 'clay-btn-secondary'}`}
+                style={{ borderRadius: '9999px', fontSize: '0.8rem', padding: '0.4rem 0.95rem' }}
+              >
+                {chip.label}
+              </button>
+            ))}
+          </div>
+
           {/* Collapsible Specific Filters */}
           {showAdvancedFilters && (
             <div
               className="clay-grid-2"
               style={{
-                marginTop: '1.5rem',
-                paddingTop: '1.5rem',
-                borderTop: '2px solid rgba(124, 58, 237, 0.08)',
+                marginTop: '1.25rem',
+                paddingTop: '1.25rem',
+                borderTop: '2px solid var(--border-subtle)',
               }}
             >
               <div>
@@ -353,10 +389,12 @@ export const UserStoreBrowsePage = () => {
         {loading ? (
           viewMode === 'grid' ? (
             <div className="clay-grid-3" style={{ marginBottom: '2.5rem' }}>
-              <SkeletonCard count={pagination.limit || 6} />
+              <SkeletonCard count={6} />
             </div>
           ) : (
-            <SkeletonTable rows={pagination.limit || 6} columns={5} />
+            <div style={{ marginBottom: '2.5rem' }}>
+              <SkeletonTable rows={6} cols={5} />
+            </div>
           )
         ) : stores.length === 0 ? (
           <Card style={{ textAlign: 'center', padding: '4rem 1.5rem' }}>
@@ -372,15 +410,15 @@ export const UserStoreBrowsePage = () => {
             </Button>
           </Card>
         ) : viewMode === 'grid' ? (
-          /* GRID CARDS VIEW */
+          /* GRID CARDS VIEW WITH BRAND BANNERS & TRUST SEALS */
           <div className="clay-grid-3" style={{ marginBottom: '2.5rem' }}>
             {stores.map((s) => {
               const overallAvg = parseFloat(s.overall_rating || s.average_rating || 0);
               const reviewCount = s.rating_count || 0;
               const hasReviews = reviewCount > 0 && overallAvg > 0;
               const isUserRated = s.user_rating !== null && s.user_rating !== undefined;
-              const category = getStoreCategory(s.name, s.address);
               const isTopRated = overallAvg >= 4.8 && reviewCount >= 2;
+              const catDetails = getStoreCategoryDetails(s.name, s.email);
 
               return (
                 <Card
@@ -389,36 +427,70 @@ export const UserStoreBrowsePage = () => {
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
+                    overflow: 'hidden',
                   }}
                 >
                   <div>
-                    {/* Category Cover Banner */}
-                    <div className={`clay-category-banner ${category.bannerClass}`}>
-                      <span>
-                        {category.icon} {category.name}
-                      </span>
-                      {isTopRated ? (
-                        <span className="clay-trust-seal">🏆 Top Rated</span>
-                      ) : (
-                        <span className="clay-open-status" style={{ color: '#ffffff' }}>Open Today</span>
-                      )}
+                    {/* Vibrant Category Cover Banner */}
+                    <div className={`clay-store-banner ${catDetails.bannerClass}`}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span style={{ fontSize: '1.5rem' }}>{catDetails.icon}</span>
+                        <div>
+                          <span style={{ fontSize: '0.78rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', opacity: 0.9 }}>
+                            {catDetails.category}
+                          </span>
+                          <span style={{ display: 'block', fontSize: '0.72rem', opacity: 0.8 }}>
+                            {catDetails.tag}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                        {isTopRated && (
+                          <span
+                            style={{
+                              background: 'rgba(255, 255, 255, 0.92)',
+                              color: '#B45309',
+                              padding: '2px 8px',
+                              borderRadius: '9999px',
+                              fontSize: '0.7rem',
+                              fontWeight: 800,
+                              boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                            }}
+                          >
+                            🏆 Top Rated
+                          </span>
+                        )}
+                        <span
+                          style={{
+                            background: 'rgba(16, 185, 129, 0.25)',
+                            backdropFilter: 'blur(4px)',
+                            color: '#FFFFFF',
+                            padding: '2px 8px',
+                            borderRadius: '9999px',
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                            border: '1px solid rgba(255, 255, 255, 0.4)',
+                          }}
+                        >
+                          🟢 Open Today
+                        </span>
+                      </div>
                     </div>
 
                     {/* Store Title & Address */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                      <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900, lineHeight: 1.25 }}>
-                        {s.name}
-                      </h3>
-                    </div>
+                    <h3 style={{ margin: '0 0 0.4rem 0', fontSize: '1.3rem', fontWeight: 900, lineHeight: 1.25 }}>
+                      {s.name}
+                    </h3>
 
-                    <p style={{ color: 'var(--clay-text-muted)', fontSize: '0.88rem', margin: '0 0 1.25rem 0' }}>
+                    <p style={{ color: 'var(--clay-text-muted)', fontSize: '0.88rem', margin: '0 0 1.15rem 0' }}>
                       📍 {s.address}
                     </p>
 
                     {/* Overall Rating Box */}
                     <div
                       style={{
-                        background: 'var(--clay-input-bg)',
+                        background: 'var(--clay-recessed-bg)',
                         borderRadius: 'var(--radius-clay-inner)',
                         padding: '1rem 1.15rem',
                         marginBottom: '1rem',
@@ -447,19 +519,16 @@ export const UserStoreBrowsePage = () => {
                     </div>
 
                     {/* User Rating Status Badge */}
-                    <div style={{ marginBottom: '1rem' }}>
+                    <div style={{ marginBottom: '1.25rem' }}>
                       {isUserRated ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                           <span className="clay-badge clay-badge-green" style={{ width: '100%', justifyContent: 'center', padding: '0.5rem 1rem' }}>
                             ⭐ You Rated: {s.user_rating} / 5 Stars
                           </span>
-                          {s.owner_reply && (
-                            <div className="clay-owner-reply-box">
-                              <div className="clay-owner-reply-header">
-                                <span>💬 Store Owner Response</span>
-                              </div>
-                              <p className="clay-owner-reply-text">"{s.owner_reply}"</p>
-                            </div>
+                          {s.my_comment && (
+                            <p style={{ margin: 0, fontSize: '0.84rem', color: 'var(--clay-text-muted)', fontStyle: 'italic', padding: '0 0.5rem' }}>
+                              "{s.my_comment}"
+                            </p>
                           )}
                         </div>
                       ) : (
@@ -477,7 +546,7 @@ export const UserStoreBrowsePage = () => {
                       onClick={() => setSelectedStoreForRating(s)}
                       style={{ width: '100%' }}
                     >
-                      {isUserRated ? '✏️ Modify Rating' : '⭐ Submit Rating'}
+                      {isUserRated ? '✏️ Modify Your Rating' : '⭐ Submit Star Rating'}
                     </Button>
                   </div>
                 </Card>
@@ -485,7 +554,7 @@ export const UserStoreBrowsePage = () => {
             })}
           </div>
         ) : (
-          /* TABLE VIEW */
+          /* TABLE VIEW WITH CATEGORY BADGES */
           <div className="clay-table-wrapper" style={{ marginBottom: '2.5rem' }}>
             <table className="clay-table">
               <thead>
@@ -493,7 +562,7 @@ export const UserStoreBrowsePage = () => {
                   <th onClick={() => handleSortToggle('name')} style={{ cursor: 'pointer' }}>
                     Store Name {sort.sortBy === 'name' ? (sort.sortOrder === 'ASC' ? '▲' : '▼') : ''}
                   </th>
-                  <th>Category</th>
+                  <th>Sector</th>
                   <th onClick={() => handleSortToggle('address')} style={{ cursor: 'pointer' }}>
                     Address {sort.sortBy === 'address' ? (sort.sortOrder === 'ASC' ? '▲' : '▼') : ''}
                   </th>
@@ -512,16 +581,19 @@ export const UserStoreBrowsePage = () => {
                   const reviewCount = s.rating_count || 0;
                   const hasReviews = reviewCount > 0 && overallAvg > 0;
                   const isUserRated = s.user_rating !== null && s.user_rating !== undefined;
-                  const category = getStoreCategory(s.name, s.address);
+                  const catDetails = getStoreCategoryDetails(s.name, s.email);
 
                   return (
                     <tr key={s.id}>
                       <td style={{ fontWeight: 800, color: 'var(--clay-text-primary)' }}>
-                        {s.name}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span>{catDetails.icon}</span>
+                          <span>{s.name}</span>
+                        </div>
                       </td>
                       <td>
-                        <span className="clay-badge clay-badge-purple" style={{ fontSize: '0.78rem' }}>
-                          {category.icon} {category.name}
+                        <span className="clay-badge clay-badge-purple" style={{ fontSize: '0.75rem' }}>
+                          {catDetails.category}
                         </span>
                       </td>
                       <td style={{ color: 'var(--clay-text-muted)' }}>
@@ -548,7 +620,7 @@ export const UserStoreBrowsePage = () => {
                       <td>
                         {isUserRated ? (
                           <span className="clay-badge clay-badge-green">
-                            ⭐ {s.user_rating} / 5 Stars
+                            ⭐ {s.user_rating} / 5
                           </span>
                         ) : (
                           <span style={{ color: 'var(--clay-text-dim)', fontSize: '0.85rem' }}>
@@ -599,5 +671,3 @@ export const UserStoreBrowsePage = () => {
     </div>
   );
 };
-
-export default UserStoreBrowsePage;

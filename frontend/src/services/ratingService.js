@@ -32,12 +32,13 @@ export const ratingService = {
   },
 
   /**
-   * Post store owner response to a customer rating (STORE_OWNER)
+   * Reply to a customer review (STORE_OWNER or SYSTEM_ADMIN)
+   * Targets POST /api/v1/ratings/:id/reply
    */
-  async replyToRating(ratingId, replyText) {
+  async replyToRating(ratingId, { reply, replyText }) {
     const rId = parseInt(ratingId, 10);
     const res = await api.post(`/ratings/${rId}/reply`, {
-      reply: replyText ? replyText.trim() : '',
+      reply: reply !== undefined ? reply : replyText,
     });
     return res.data;
   },
