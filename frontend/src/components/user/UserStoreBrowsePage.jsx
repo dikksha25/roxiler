@@ -324,6 +324,8 @@ export const UserStoreBrowsePage = () => {
         <div className="grid grid-3" style={{ gap: '1.25rem', marginBottom: '1.5rem' }}>
           {stores.map((s) => {
             const overallAvg = parseFloat(s.overall_rating || s.average_rating || 0);
+            const reviewCount = s.rating_count || 0;
+            const hasReviews = reviewCount > 0 && overallAvg > 0;
             const isUserRated = s.user_rating !== null && s.user_rating !== undefined;
 
             return (
@@ -363,17 +365,19 @@ export const UserStoreBrowsePage = () => {
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', fontWeight: 600, textTransform: 'uppercase' }}>
                         Overall Community Rating
                       </span>
-                      <span style={{ color: '#f59e0b', fontSize: '1rem', fontWeight: 800 }}>
-                        ★ {overallAvg.toFixed(2)}
+                      <span style={{ color: hasReviews ? '#f59e0b' : 'var(--text-dim)', fontSize: '1rem', fontWeight: 800 }}>
+                        {hasReviews ? `★ ${overallAvg.toFixed(2)}` : 'No ratings yet'}
                       </span>
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.35rem' }}>
-                      <span style={{ color: '#fbbf24', fontSize: '0.9rem' }}>
-                        {'★'.repeat(Math.round(overallAvg))}{'☆'.repeat(5 - Math.round(overallAvg))}
+                      <span style={{ color: hasReviews ? '#fbbf24' : 'rgba(255, 255, 255, 0.2)', fontSize: '0.9rem' }}>
+                        {hasReviews
+                          ? '★'.repeat(Math.round(overallAvg)) + '☆'.repeat(5 - Math.round(overallAvg))
+                          : '☆☆☆☆☆'}
                       </span>
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                        {s.rating_count || 0} {s.rating_count === 1 ? 'review' : 'reviews'}
+                        {hasReviews ? `${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'}` : '0 reviews'}
                       </span>
                     </div>
                   </div>
@@ -471,6 +475,8 @@ export const UserStoreBrowsePage = () => {
               <tbody>
                 {stores.map((s) => {
                   const overallAvg = parseFloat(s.overall_rating || s.average_rating || 0);
+                  const reviewCount = s.rating_count || 0;
+                  const hasReviews = reviewCount > 0 && overallAvg > 0;
                   const isUserRated = s.user_rating !== null && s.user_rating !== undefined;
 
                   return (
@@ -489,12 +495,20 @@ export const UserStoreBrowsePage = () => {
                       </td>
                       <td style={{ padding: '0.85rem 1rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                          <span style={{ color: '#f59e0b', fontWeight: 700 }}>
-                            ★ {overallAvg.toFixed(2)}
-                          </span>
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
-                            ({s.rating_count || 0})
-                          </span>
+                          {hasReviews ? (
+                            <>
+                              <span style={{ color: '#f59e0b', fontWeight: 700 }}>
+                                ★ {overallAvg.toFixed(2)}
+                              </span>
+                              <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
+                                ({reviewCount})
+                              </span>
+                            </>
+                          ) : (
+                            <span style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>
+                              No ratings yet
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td style={{ padding: '0.85rem 1rem' }}>
