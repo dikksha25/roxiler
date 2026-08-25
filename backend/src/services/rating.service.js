@@ -7,16 +7,18 @@ class RatingService {
   /**
    * Submit or update rating for a store
    */
-  async submitRating({ userId, storeId, rating, comment }) {
+  async submitRating({ userId, storeId, rating, rating_value, comment }) {
     const store = await storeRepository.findById(storeId);
     if (!store) {
       throw new NotFoundError(`Store with ID ${storeId} does not exist`);
     }
 
+    const value = parseInt(rating_value || rating, 10);
+
     const savedRating = await ratingRepository.upsert({
       userId,
       storeId: parseInt(storeId, 10),
-      rating: parseInt(rating, 10),
+      ratingValue: value,
       comment,
     });
 

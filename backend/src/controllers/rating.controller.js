@@ -5,11 +5,12 @@ const asyncHandler = require('../middleware/asyncHandler.middleware');
 const MESSAGES = require('../constants/messages.constant');
 
 const submitRating = asyncHandler(async (req, res) => {
-  const { storeId, rating, comment } = req.body;
+  const { storeId, rating, rating_value, comment } = req.body;
   const savedRating = await ratingService.submitRating({
     userId: req.user.id,
     storeId,
     rating,
+    rating_value,
     comment,
   });
 
@@ -19,7 +20,7 @@ const submitRating = asyncHandler(async (req, res) => {
 const getStoreRatings = asyncHandler(async (req, res) => {
   const storeId = parseInt(req.params.storeId, 10);
   const parsedQuery = QueryParamsUtil.parse(req.query, {
-    allowedSortFields: ['rating', 'created_at'],
+    allowedSortFields: ['rating', 'rating_value', 'created_at'],
     defaultSortBy: 'created_at',
   });
 

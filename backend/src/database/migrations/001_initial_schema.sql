@@ -1,8 +1,9 @@
 -- ============================================================================
 -- Store Rating Web Application — Normalized PostgreSQL Database Schema
+-- Migration: 001_initial_schema.sql
 -- ============================================================================
 
--- 1. Enable Extensions
+-- 1. Enable Required Extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 
@@ -14,6 +15,7 @@ DO $$ BEGIN
 END $$;
 
 -- 3. USERS Table
+-- Stores user credentials, profiles, and platform roles
 CREATE TABLE IF NOT EXISTS users (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -27,11 +29,15 @@ CREATE TABLE IF NOT EXISTS users (
     CONSTRAINT chk_users_email_format CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
 );
 
+-- Unique case-insensitive index on email
 CREATE UNIQUE INDEX IF NOT EXISTS uq_idx_users_email_lower ON users (LOWER(trim(email)));
+
+-- Indexes for role-based queries & authentication
 CREATE INDEX IF NOT EXISTS idx_users_role ON users (role);
 CREATE INDEX IF NOT EXISTS idx_users_created_at ON users (created_at DESC);
 
 -- 4. STORES Table
+-- Stores commercial entities that can receive ratings from users
 CREATE TABLE IF NOT EXISTS stores (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -45,11 +51,24 @@ CREATE TABLE IF NOT EXISTS stores (
     CONSTRAINT chk_stores_email_format CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
 );
 
+-- Indexes for store lookups, owner association, and full-text searching
 CREATE INDEX IF NOT EXISTS idx_stores_owner_id ON stores (owner_id);
 CREATE INDEX IF NOT EXISTS idx_stores_name ON stores (name);
 CREATE INDEX IF NOT EXISTS idx_stores_created_at ON stores (created_at DESC);
 
+-- GIN trigram indexes for high-speed text filtering & fuzzy search
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_trgm') THEN
+        CREATE INDEX IF NOT EXISTS idx_stores_name_trgm ON stores USING gin (name gin_trgm_ops);
+        CREATE INDEX IF NOT EXISTS idx_stores_address_trgm ON stores USING gin (address gin_trgm_ops);
+    END IF;
+EXCEPTION WHEN OTHERS THEN
+    -- Fallback to standard B-Tree if trigram is unavailable
+    NULL;
+END $$;
+
 -- 5. RATINGS Table
+-- Stores 1-to-5 star ratings and reviews submitted by Normal Users
 CREATE TABLE IF NOT EXISTS ratings (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -58,16 +77,25 @@ CREATE TABLE IF NOT EXISTS ratings (
     comment TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Rating Value Constraint (1 to 5 stars only)
     CONSTRAINT chk_ratings_value_range CHECK (rating_value >= 1 AND rating_value <= 5),
+    
+    -- Unique constraint preventing a user from submitting multiple ratings for the same store
     CONSTRAINT uq_user_store_rating UNIQUE (user_id, store_id)
 );
 
+-- Indexes on ratings for fast aggregation and querying
 CREATE INDEX IF NOT EXISTS idx_ratings_store_id ON ratings (store_id);
 CREATE INDEX IF NOT EXISTS idx_ratings_user_id ON ratings (user_id);
 CREATE INDEX IF NOT EXISTS idx_ratings_created_at ON ratings (created_at DESC);
+
+-- Composite index optimizing average rating calculation & star breakdown
 CREATE INDEX IF NOT EXISTS idx_ratings_store_rating_val ON ratings (store_id, rating_value);
 
--- 6. Triggers
+-- 6. Trigger Functions & Business Rules
+
+-- Trigger function: Update timestamp
 CREATE OR REPLACE FUNCTION trigger_set_timestamp()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -76,6 +104,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Apply timestamp triggers to users, stores, and ratings
 DROP TRIGGER IF EXISTS set_timestamp_users ON users;
 CREATE TRIGGER set_timestamp_users
 BEFORE UPDATE ON users
@@ -94,13 +123,14 @@ BEFORE UPDATE ON ratings
 FOR EACH ROW
 EXECUTE FUNCTION trigger_set_timestamp();
 
--- Role validation trigger
+-- Trigger function: Role integrity guard for rating submission
 CREATE OR REPLACE FUNCTION trigger_validate_rating_submission()
 RETURNS TRIGGER AS $$
 DECLARE
     v_user_role user_role;
     v_store_owner_id BIGINT;
 BEGIN
+    -- Check submitting user's role
     SELECT role INTO v_user_role FROM users WHERE id = NEW.user_id;
     
     IF v_user_role IS NULL THEN
@@ -111,6 +141,7 @@ BEGIN
         RAISE EXCEPTION 'Only NORMAL_USER accounts can submit ratings. User ID % has role %', NEW.user_id, v_user_role;
     END IF;
 
+    -- Check if submitting user is the owner of the target store
     SELECT owner_id INTO v_store_owner_id FROM stores WHERE id = NEW.store_id;
     
     IF v_store_owner_id IS NOT NULL AND v_store_owner_id = NEW.user_id THEN
@@ -127,7 +158,8 @@ BEFORE INSERT OR UPDATE ON ratings
 FOR EACH ROW
 EXECUTE FUNCTION trigger_validate_rating_submission();
 
--- 7. View
+-- 7. Aggregated Store Summary View
+-- Computes real-time average rating, total review count, and star distributions
 CREATE OR REPLACE VIEW v_store_rating_summaries AS
 SELECT 
     s.id AS store_id,
