@@ -1,6 +1,7 @@
 const express = require('express');
 const userController = require('../../controllers/user.controller');
 const {
+  createUserValidator,
   listUsersValidator,
   getUserByIdValidator,
   updateProfileValidator,
@@ -12,13 +13,37 @@ const { ROLES } = require('../../constants/roles.constant');
 
 const router = express.Router();
 
-// Admin only: List all users with filtering, sorting, pagination
-router.get('/', authenticate, authorize(ROLES.SYSTEM_ADMIN), validate(listUsersValidator), userController.listUsers);
+// System Administrator Routes (Protected)
+router.post(
+  '/',
+  authenticate,
+  authorize(ROLES.SYSTEM_ADMIN),
+  validate(createUserValidator),
+  userController.createUser
+);
 
-// Admin only: Get specific user
-router.get('/:id', authenticate, authorize(ROLES.SYSTEM_ADMIN), validate(getUserByIdValidator), userController.getUserById);
+router.get(
+  '/',
+  authenticate,
+  authorize(ROLES.SYSTEM_ADMIN),
+  validate(listUsersValidator),
+  userController.getUsers
+);
 
-// Authenticated user: Update own profile
-router.patch('/profile', authenticate, validate(updateProfileValidator), userController.updateProfile);
+router.get(
+  '/:id',
+  authenticate,
+  authorize(ROLES.SYSTEM_ADMIN),
+  validate(getUserByIdValidator),
+  userController.getUserById
+);
+
+// Authenticated User Profile Update
+router.patch(
+  '/profile',
+  authenticate,
+  validate(updateProfileValidator),
+  userController.updateProfile
+);
 
 module.exports = router;

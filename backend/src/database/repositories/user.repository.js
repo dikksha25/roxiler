@@ -1,9 +1,6 @@
 const BaseRepository = require('./base.repository');
 const { ROLES } = require('../../constants/roles.constant');
-const bcrypt = require('bcryptjs');
 
-// Pre-computed salted bcrypt hashes for development fallback
-// 'AdminPassword123!', 'OwnerPassword123!', 'UserPassword123!'
 const DEV_PASSWORD_HASH = '$2a$10$w09Z9K0Nq0mQ8.9j1h0q8O/H/J/K/L/M/N/O/P/Q/R/S/T/U/V/W.';
 
 const DEV_SEEDED_USERS = [
@@ -76,24 +73,22 @@ class UserRepository extends BaseRepository {
       );
       return res.rows[0] || null;
     } catch (err) {
-      // Development fallback
       const found = this.inMemoryUsers.find((u) => u.email.toLowerCase() === normalized);
       return found ? { ...found } : null;
     }
   }
 
   async findUserProfileById(id) {
+    const userId = parseInt(id, 10);
     try {
       const res = await this.query(
         'SELECT id, name, email, address, role, created_at, updated_at FROM users WHERE id = $1',
-        [id]
+        [userId]
       );
       return res.rows[0] || null;
     } catch (err) {
-      // Development fallback
-      const found = this.inMemoryUsers.find((u) => u.id === parseInt(id, 10));
+      const found = this.inMemoryUsers.find((u) => u.id === userId);
       if (!found) return null;
-      // Exclude password_hash
       const { password_hash: _, ...safeUser } = found;
       return safeUser;
     }
@@ -107,17 +102,16 @@ class UserRepository extends BaseRepository {
         `INSERT INTO users (name, email, password_hash, address, role)
          VALUES ($1, $2, $3, $4, $5)
          RETURNING id, name, email, address, role, created_at, updated_at`,
-        [name, normalized, passwordHash, address || null, role]
+        [name.trim(), normalized, passwordHash, address ? address.trim() : null, role]
       );
       return res.rows[0];
     } catch (err) {
-      // Development fallback
       const newUser = {
         id: this.inMemoryUsers.length + 1,
-        name,
+        name: name.trim(),
         email: normalized,
         password_hash: passwordHash,
-        address: address || null,
+        address: address ? address.trim() : null,
         role,
         created_at: new Date(),
         updated_at: new Date(),
@@ -129,14 +123,15 @@ class UserRepository extends BaseRepository {
   }
 
   async updatePassword(userId, passwordHash) {
+    const uId = parseInt(userId, 10);
     try {
       const res = await this.query(
         'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2 RETURNING id',
-        [passwordHash, userId]
+        [passwordHash, uId]
       );
       return res.rows[0] || null;
     } catch (err) {
-      const user = this.inMemoryUsers.find((u) => u.id === parseInt(userId, 10));
+      const user = this.inMemoryUsers.find((u) => u.id === uId);
       if (user) {
         user.password_hash = passwordHash;
         user.updated_at = new Date();
@@ -147,6 +142,7 @@ class UserRepository extends BaseRepository {
   }
 
   async updateProfile(userId, { name, address }) {
+    const uId = parseInt(userId, 10);
     try {
       const res = await this.query(
         `UPDATE users
@@ -155,14 +151,14 @@ class UserRepository extends BaseRepository {
              updated_at = NOW()
          WHERE id = $3
          RETURNING id, name, email, address, role, updated_at`,
-        [name, address, userId]
+        [name ? name.trim() : null, address ? address.trim() : null, uId]
       );
       return res.rows[0] || null;
     } catch (err) {
-      const user = this.inMemoryUsers.find((u) => u.id === parseInt(userId, 10));
+      const user = this.inMemoryUsers.find((u) => u.id === uId);
       if (user) {
-        if (name) user.name = name;
-        if (address) user.address = address;
+        if (name) user.name = name.trim();
+        if (address) user.address = address.trim();
         user.updated_at = new Date();
         const { password_hash: _, ...safeUser } = user;
         return safeUser;
@@ -171,34 +167,66 @@ class UserRepository extends BaseRepository {
     }
   }
 
-  async findPaginated({ search = '', role = null, sortBy = 'created_at', sortOrder = 'DESC', limit = 10, offset = 0 }) {
+  /**
+   * Search, filter, sort, and paginate users
+   */
+  async findPaginated({
+    search = '',
+    role = null,
+    name = '',
+    email = '',
+    address = '',
+    sortBy = 'created_at',
+    sortOrder = 'DESC',
+    limit = 10,
+    offset = 0,
+  }) {
     try {
-      let whereClause = '';
+      let whereClauses = ['1=1'];
       let params = [];
 
-      if (role && search) {
-        whereClause = 'WHERE role = $1 AND (name ILIKE $2 OR email ILIKE $2 OR address ILIKE $2)';
-        params = [role, `%${search}%`];
-      } else if (role) {
-        whereClause = 'WHERE role = $1';
-        params = [role];
-      } else if (search) {
-        whereClause = 'WHERE (name ILIKE $1 OR email ILIKE $1 OR address ILIKE $1)';
-        params = [`%${search}%`];
+      if (role) {
+        params.push(role);
+        whereClauses.push(`role = $${params.length}`);
       }
 
-      const countSql = `SELECT COUNT(*) AS total FROM users ${whereClause}`;
+      if (name) {
+        params.push(`%${name.trim()}%`);
+        whereClauses.push(`name ILIKE $${params.length}`);
+      }
+
+      if (email) {
+        params.push(`%${email.trim()}%`);
+        whereClauses.push(`email ILIKE $${params.length}`);
+      }
+
+      if (address) {
+        params.push(`%${address.trim()}%`);
+        whereClauses.push(`address ILIKE $${params.length}`);
+      }
+
+      if (search) {
+        params.push(`%${search.trim()}%`);
+        const pIdx = params.length;
+        whereClauses.push(`(name ILIKE $${pIdx} OR email ILIKE $${pIdx} OR address ILIKE $${pIdx})`);
+      }
+
+      const whereSql = `WHERE ${whereClauses.join(' AND ')}`;
+
+      const countSql = `SELECT COUNT(*) AS total FROM users ${whereSql}`;
       const countRes = await this.query(countSql, params);
       const total = parseInt(countRes.rows[0].total, 10);
 
-      const safeSortBy = ['name', 'email', 'role', 'created_at'].includes(sortBy) ? sortBy : 'created_at';
+      const safeSortBy = ['name', 'email', 'address', 'role', 'created_at'].includes(sortBy)
+        ? sortBy
+        : 'created_at';
       const safeSortOrder = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
       const pIndex = params.length + 1;
       const selectSql = `
         SELECT id, name, email, address, role, created_at, updated_at
         FROM users
-        ${whereClause}
+        ${whereSql}
         ORDER BY ${safeSortBy} ${safeSortOrder}
         LIMIT $${pIndex} OFFSET $${pIndex + 1}
       `;
@@ -207,11 +235,49 @@ class UserRepository extends BaseRepository {
       return { items: dataRes.rows, total };
     } catch (err) {
       let filtered = [...this.inMemoryUsers];
-      if (role) filtered = filtered.filter((u) => u.role === role);
-      if (search) {
-        const s = search.toLowerCase();
-        filtered = filtered.filter((u) => u.name.toLowerCase().includes(s) || u.email.toLowerCase().includes(s));
+
+      if (role) {
+        filtered = filtered.filter((u) => u.role === role);
       }
+      if (name) {
+        filtered = filtered.filter((u) => u.name.toLowerCase().includes(name.trim().toLowerCase()));
+      }
+      if (email) {
+        filtered = filtered.filter((u) => u.email.toLowerCase().includes(email.trim().toLowerCase()));
+      }
+      if (address) {
+        filtered = filtered.filter((u) => (u.address || '').toLowerCase().includes(address.trim().toLowerCase()));
+      }
+      if (search) {
+        const s = search.trim().toLowerCase();
+        filtered = filtered.filter(
+          (u) =>
+            u.name.toLowerCase().includes(s) ||
+            u.email.toLowerCase().includes(s) ||
+            (u.address || '').toLowerCase().includes(s)
+        );
+      }
+
+      const safeSortBy = ['name', 'email', 'address', 'role', 'created_at'].includes(sortBy)
+        ? sortBy
+        : 'created_at';
+      const isAsc = sortOrder.toUpperCase() === 'ASC';
+
+      filtered.sort((a, b) => {
+        let valA = a[safeSortBy] || '';
+        let valB = b[safeSortBy] || '';
+        if (safeSortBy === 'created_at') {
+          valA = new Date(valA).getTime();
+          valB = new Date(valB).getTime();
+        } else {
+          valA = valA.toString().toLowerCase();
+          valB = valB.toString().toLowerCase();
+        }
+        if (valA < valB) return isAsc ? -1 : 1;
+        if (valA > valB) return isAsc ? 1 : -1;
+        return 0;
+      });
+
       const safeUsers = filtered.map(({ password_hash: _, ...safe }) => safe);
       const items = safeUsers.slice(offset, offset + limit);
       return { items, total: filtered.length };
