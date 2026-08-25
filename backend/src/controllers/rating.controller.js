@@ -66,7 +66,7 @@ const getOwnerRatings = asyncHandler(async (req, res) => {
   parsedQuery.email = req.query.email || '';
   parsedQuery.address = req.query.address || '';
 
-  const { ratings, pagination } = await ratingService.getOwnerRatings(req.user.id, parsedQuery);
+  const { ratings, pagination } = await ratingService.getOwnerRatings(req.user.id, parsedQuery, req.user.role);
   return ApiResponse.success(res, 'Store owner ratings retrieved successfully', { ratings }, 200, pagination);
 });
 
@@ -77,7 +77,7 @@ const getMyRatings = asyncHandler(async (req, res) => {
 
 const getStoreRatings = asyncHandler(async (req, res) => {
   const storeId = parseInt(req.params.storeId, 10);
-  const ratings = await ratingService.getStoreRatings(storeId);
+  const ratings = await ratingService.getStoreRatings(storeId, req.user);
   return ApiResponse.success(res, 'Store ratings retrieved successfully', ratings);
 });
 

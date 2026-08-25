@@ -120,7 +120,7 @@ class RatingService {
   /**
    * Dedicated paginated customer ratings retrieval for STORE_OWNER
    */
-  async getOwnerRatings(ownerId, parsedQuery) {
+  async getOwnerRatings(ownerId, parsedQuery, userRole = null) {
     const {
       limit,
       offset,
@@ -134,6 +134,18 @@ class RatingService {
       sortBy,
       sortOrder,
     } = parsedQuery;
+
+    // Object-Level Authorization: If a storeId is provided, ensure STORE_OWNER owns it
+    if (storeId && userRole !== 'SYSTEM_ADMIN') {
+      const targetStore = await storeRepository.findDetailById(storeId);
+      if (!targetStore) {
+        throw new NotFoundError(`Store with ID ${storeId} was not found.`);
+      }
+      if (targetStore.owner_id !== parseInt(ownerId, 10)) {
+        const ForbiddenError = require('../errors/forbidden.error');
+        throw new ForbiddenError('You do not have permission to view customer ratings for another merchant\'s store.');
+      }
+    }
 
     const { items, total } = await ratingRepository.findPaginatedForOwner(ownerId, {
       search,
@@ -161,10 +173,28 @@ class RatingService {
   }
 
   /**
-   * Get ratings received by a specific store
+   * Get ratings received by a specific store with object-level authorization
    */
-  async getStoreRatings(storeId) {
-    return await ratingRepository.findByStoreId(storeId);
+  async getStoreRatings(storeId, requestingUser = null) {
+    const targetStoreId = parseInt(storeId, 10);
+    if (isNaN(targetStoreId) || targetStoreId < 1) {
+      throw new BadRequestError('Valid store ID is required.');
+    }
+
+    const store = await storeRepository.findDetailById(targetStoreId);
+    if (!store) {
+      throw new NotFoundError(`Store with ID ${targetStoreId} was not found.`);
+    }
+
+    // Object-Level Authorization: STORE_OWNER can only view ratings for their own stores
+    if (requestingUser && requestingUser.role === 'STORE_OWNER') {
+      if (store.owner_id !== parseInt(requestingUser.id, 10)) {
+        const ForbiddenError = require('../errors/forbidden.error');
+        throw new ForbiddenError('You do not have permission to view ratings for another merchant\'s store.');
+      }
+    }
+
+    return await ratingRepository.findByStoreId(targetStoreId);
   }
 }
 
