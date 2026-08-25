@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const envConfig = require('./config/env.config');
 const {
   applySecurityMiddleware,
@@ -10,6 +11,14 @@ const {
 const apiRoutes = require('./routes');
 
 const app = express();
+
+// 0. Correlation ID Middleware
+app.use((req, res, next) => {
+  const reqId = req.headers['x-request-id'] || (crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(16).toString('hex'));
+  req.id = reqId;
+  res.setHeader('X-Request-Id', reqId);
+  next();
+});
 
 // 1. Security Headers & CORS
 applySecurityMiddleware(app);

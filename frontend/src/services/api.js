@@ -10,13 +10,22 @@ export const api = axios.create({
   timeout: 10000,
 });
 
-// Request Interceptor: Attach JWT token if present
+// Request Interceptor: Attach JWT token & correlation ID
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('store_rating_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Attach correlation ID if not present
+    if (!config.headers['X-Request-Id']) {
+      const reqId = typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : 'req_' + Math.random().toString(36).substring(2, 11);
+      config.headers['X-Request-Id'] = reqId;
+    }
+
     return config;
   },
   (error) => Promise.reject(error)

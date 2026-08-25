@@ -4,5 +4,8 @@ const healthController = require('../../controllers/health.controller');
 const router = express.Router();
 
 router.get('/', healthController.getHealth);
+router.get('/live', healthController.getLiveness);
+router.get('/ready', healthController.getReadiness);
 
 module.exports = router;
+

@@ -51,6 +51,15 @@ const startServer = async () => {
 
   process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
   process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('💥 [Process Fatal] Unhandled Rejection at:', promise, 'reason:', reason);
+  });
+
+  process.on('uncaughtException', (error) => {
+    console.error('💥 [Process Fatal] Uncaught Exception:', error);
+    gracefulShutdown('uncaughtException');
+  });
 };
 
 startServer();

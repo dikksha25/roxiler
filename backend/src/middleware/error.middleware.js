@@ -12,6 +12,7 @@ const errorHandler = (err, req, res, next) => {
   // Log error in development/non-test environments
   if (!envConfig.isTest) {
     console.error('💥 [Global Error Handler]:', {
+      requestId: req.id || req.headers['x-request-id'] || null,
       name: err.name,
       message: err.message,
       statusCode: err.statusCode || 500,
