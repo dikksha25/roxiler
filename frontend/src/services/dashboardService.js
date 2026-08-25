@@ -26,6 +26,15 @@ export const dashboardService = {
   },
 
   /**
+   * Fetch detailed Store Owner rating statistics & 1-to-5 star distribution
+   */
+  async getStoreOwnerStatistics(storeId = null) {
+    const params = storeId ? { storeId } : {};
+    const res = await api.get('/dashboard/owner/statistics', { params });
+    return res.data;
+  },
+
+  /**
    * Fetch Normal User ratings activity
    */
   async getUserStats() {

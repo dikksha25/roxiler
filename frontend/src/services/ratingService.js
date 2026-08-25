@@ -38,4 +38,12 @@ export const ratingService = {
     const res = await api.get('/ratings/my-ratings');
     return res.data;
   },
+
+  /**
+   * Get customer ratings list for STORE_OWNER
+   */
+  async getOwnerRatings(params = {}) {
+    const res = await api.get('/ratings/owner-ratings', { params });
+    return res.data;
+  },
 };
