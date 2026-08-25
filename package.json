@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Full-Stack Store Rating Application (React + Express + PostgreSQL + JWT)",
   "scripts": {
+    "build": "npm --prefix frontend install && npm --prefix frontend run build",
+    "vercel-build": "npm --prefix frontend install && npm --prefix frontend run build",
+    "start": "npm --prefix backend run start",
     "dev": "concurrently -n \"BACKEND,FRONTEND\" -c \"blue,magenta\" \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "npm --prefix backend run dev",
     "dev:frontend": "npm --prefix frontend run dev",
@@ -22,8 +25,7 @@
     "concurrently": "^9.1.2"
   },
   "engines": {
-    "node": ">=18.0.0",
+    "node": "20.x || 22.x || 24.x",
     "npm": ">=9.0.0"
   }
 }
-
