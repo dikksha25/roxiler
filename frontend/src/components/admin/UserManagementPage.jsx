@@ -5,8 +5,10 @@ import { Badge } from '../common/Badge';
 import { Button } from '../common/Button';
 import { Alert } from '../common/Alert';
 import { Spinner } from '../common/Spinner';
+import { Pagination } from '../common/Pagination';
 import { AddUserModal } from './AddUserModal';
 import { UserDetailModal } from './UserDetailModal';
+import { useDebounce } from '../../hooks/useDebounce';
 import { ROLES, ROLE_LABELS } from '../../constants/roles';
 
 export const UserManagementPage = () => {
@@ -18,14 +20,20 @@ export const UserManagementPage = () => {
     totalPages: 1,
   });
 
-  const [filters, setFilters] = useState({
-    search: '',
-    role: '',
-    name: '',
-    email: '',
-    address: '',
-  });
+  // Filter input state
+  const [searchInput, setSearchInput] = useState('');
+  const [nameInput, setNameInput] = useState('');
+  const [emailInput, setEmailInput] = useState('');
+  const [addressInput, setAddressInput] = useState('');
+  const [roleFilter, setRoleFilter] = useState('');
 
+  // Debounced search values
+  const debouncedSearch = useDebounce(searchInput, 300);
+  const debouncedName = useDebounce(nameInput, 300);
+  const debouncedEmail = useDebounce(emailInput, 300);
+  const debouncedAddress = useDebounce(addressInput, 300);
+
+  // Sorting state
   const [sort, setSort] = useState({
     sortBy: 'created_at',
     sortOrder: 'DESC',
@@ -34,10 +42,20 @@ export const UserManagementPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   // Modals
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+
+  // Calculate active filter count
+  const activeFiltersCount = [
+    debouncedSearch,
+    debouncedName,
+    debouncedEmail,
+    debouncedAddress,
+    roleFilter,
+  ].filter(Boolean).length;
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -48,11 +66,11 @@ export const UserManagementPage = () => {
         limit: pagination.limit,
         sortBy: sort.sortBy,
         sortOrder: sort.sortOrder,
-        search: filters.search || undefined,
-        role: filters.role || undefined,
-        name: filters.name || undefined,
-        email: filters.email || undefined,
-        address: filters.address || undefined,
+        search: debouncedSearch || undefined,
+        role: roleFilter || undefined,
+        name: debouncedName || undefined,
+        email: debouncedEmail || undefined,
+        address: debouncedAddress || undefined,
       };
 
       const res = await userService.getUsers(queryParams);
@@ -71,7 +89,22 @@ export const UserManagementPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, pagination.limit, sort.sortBy, sort.sortOrder, filters]);
+  }, [
+    pagination.page,
+    pagination.limit,
+    sort.sortBy,
+    sort.sortOrder,
+    debouncedSearch,
+    debouncedName,
+    debouncedEmail,
+    debouncedAddress,
+    roleFilter,
+  ]);
+
+  // Reset to page 1 whenever any filter or sort changes
+  useEffect(() => {
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  }, [debouncedSearch, debouncedName, debouncedEmail, debouncedAddress, roleFilter, sort]);
 
   useEffect(() => {
     fetchUsers();
@@ -82,24 +115,15 @@ export const UserManagementPage = () => {
       sortBy: field,
       sortOrder: prev.sortBy === field && prev.sortOrder === 'ASC' ? 'DESC' : 'ASC',
     }));
-    setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
-  const handleFilterChange = (field, value) => {
-    setFilters((prev) => ({ ...prev, [field]: value }));
-    setPagination((prev) => ({ ...prev, page: 1 }));
-  };
-
-  const handleClearFilters = () => {
-    setFilters({
-      search: '',
-      role: '',
-      name: '',
-      email: '',
-      address: '',
-    });
+  const handleClearAllFilters = () => {
+    setSearchInput('');
+    setNameInput('');
+    setEmailInput('');
+    setAddressInput('');
+    setRoleFilter('');
     setSort({ sortBy: 'created_at', sortOrder: 'DESC' });
-    setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
   const handleUserCreated = (newUser) => {
@@ -121,15 +145,41 @@ export const UserManagementPage = () => {
         }}
       >
         <div>
-          <h2 style={{ fontSize: '1.5rem', margin: 0 }}>👥 User Management Directory</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <h2 style={{ fontSize: '1.5rem', margin: 0 }}>👥 User Management Directory</h2>
+            {activeFiltersCount > 0 && (
+              <span
+                style={{
+                  background: 'rgba(99, 102, 241, 0.2)',
+                  color: 'var(--accent-primary)',
+                  border: '1px solid rgba(99, 102, 241, 0.4)',
+                  fontSize: '0.75rem',
+                  padding: '0.15rem 0.5rem',
+                  borderRadius: 'var(--radius-full)',
+                  fontWeight: 700,
+                }}
+              >
+                {activeFiltersCount} Active {activeFiltersCount === 1 ? 'Filter' : 'Filters'}
+              </span>
+            )}
+          </div>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '0.25rem 0 0 0' }}>
-            Create and govern platform users, assign roles, inspect account profiles, and perform filtered searches.
+            Filter by Name, Email, Address, and Role with server-side multi-criteria sorting and pagination.
           </p>
         </div>
 
-        <Button variant="primary" onClick={() => setIsAddOpen(true)}>
-          ➕ Add New User
-        </Button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <Button
+            variant="secondary"
+            onClick={() => setShowAdvancedFilters((prev) => !prev)}
+            style={{ fontSize: '0.85rem' }}
+          >
+            {showAdvancedFilters ? '▲ Hide Filters' : '▼ Specific Filters'}
+          </Button>
+          <Button variant="primary" onClick={() => setIsAddOpen(true)}>
+            ➕ Add New User
+          </Button>
+        </div>
       </div>
 
       {successMsg && (
@@ -137,9 +187,9 @@ export const UserManagementPage = () => {
       )}
       {error && <Alert type="error" message={error} onClose={() => setError(null)} />}
 
-      {/* Filter & Search Bar */}
+      {/* Filter & Search Toolbar */}
       <Card style={{ marginBottom: '1.5rem', padding: '1.25rem' }}>
-        <div className="grid grid-4" style={{ gap: '0.75rem', alignItems: 'flex-end' }}>
+        <div className="grid grid-3" style={{ gap: '0.75rem', alignItems: 'flex-end' }}>
           {/* Global Search */}
           <div>
             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-dim)', display: 'block', marginBottom: '0.25rem' }}>
@@ -148,9 +198,9 @@ export const UserManagementPage = () => {
             <input
               type="text"
               className="input-field"
-              placeholder="Search by name, email, or address..."
-              value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
+              placeholder="Search across all fields..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               style={{ fontSize: '0.85rem', width: '100%' }}
             />
           </div>
@@ -162,18 +212,18 @@ export const UserManagementPage = () => {
             </label>
             <select
               className="input-field"
-              value={filters.role}
-              onChange={(e) => handleFilterChange('role', e.target.value)}
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
               style={{ fontSize: '0.85rem', width: '100%' }}
             >
-              <option value="">All User Roles</option>
+              <option value="">All Roles</option>
               <option value={ROLES.SYSTEM_ADMIN}>🛡️ {ROLE_LABELS[ROLES.SYSTEM_ADMIN]}</option>
               <option value={ROLES.STORE_OWNER}>🏪 {ROLE_LABELS[ROLES.STORE_OWNER]}</option>
               <option value={ROLES.NORMAL_USER}>⭐ {ROLE_LABELS[ROLES.NORMAL_USER]}</option>
             </select>
           </div>
 
-          {/* Sort Column & Order */}
+          {/* Sort Column & Direction */}
           <div>
             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-dim)', display: 'block', marginBottom: '0.25rem' }}>
               SORT CRITERIA
@@ -203,18 +253,79 @@ export const UserManagementPage = () => {
               </button>
             </div>
           </div>
-
-          {/* Reset Filters */}
-          <div>
-            <Button
-              variant="secondary"
-              onClick={handleClearFilters}
-              style={{ width: '100%', fontSize: '0.85rem' }}
-            >
-              Clear Filters
-            </Button>
-          </div>
         </div>
+
+        {/* Specific Multi-Field Filters (Collapsible) */}
+        {showAdvancedFilters && (
+          <div
+            className="grid grid-3 fade-in"
+            style={{
+              gap: '0.75rem',
+              marginTop: '1rem',
+              paddingTop: '1rem',
+              borderTop: '1px solid var(--border-subtle)',
+              alignItems: 'flex-end',
+            }}
+          >
+            {/* Filter by Name */}
+            <div>
+              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-dim)', display: 'block', marginBottom: '0.25rem' }}>
+                FILTER BY NAME
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                placeholder="Specific name match..."
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                style={{ fontSize: '0.85rem', width: '100%' }}
+              />
+            </div>
+
+            {/* Filter by Email */}
+            <div>
+              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-dim)', display: 'block', marginBottom: '0.25rem' }}>
+                FILTER BY EMAIL
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                placeholder="Specific email match..."
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                style={{ fontSize: '0.85rem', width: '100%' }}
+              />
+            </div>
+
+            {/* Filter by Address */}
+            <div>
+              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-dim)', display: 'block', marginBottom: '0.25rem' }}>
+                FILTER BY ADDRESS
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                placeholder="Specific address match..."
+                value={addressInput}
+                onChange={(e) => setAddressInput(e.target.value)}
+                style={{ fontSize: '0.85rem', width: '100%' }}
+              />
+            </div>
+          </div>
+        )}
+
+        {activeFiltersCount > 0 && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.75rem' }}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={handleClearAllFilters}
+              style={{ fontSize: '0.75rem', padding: '0.25rem 0.65rem' }}
+            >
+              ✕ Clear All Filters ({activeFiltersCount})
+            </button>
+          </div>
+        )}
       </Card>
 
       {/* Users Table */}
@@ -223,15 +334,15 @@ export const UserManagementPage = () => {
           <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
             <Spinner size={36} />
             <p style={{ marginTop: '1rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-              Loading user accounts...
+              Executing server-side query...
             </p>
           </div>
         ) : users.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
             <p style={{ color: 'var(--text-muted)', fontSize: '1rem', marginBottom: '1rem' }}>
-              No users found matching the selected search criteria.
+              No users found matching the selected filter criteria.
             </p>
-            <Button variant="secondary" onClick={handleClearFilters}>
+            <Button variant="secondary" onClick={handleClearAllFilters}>
               Reset Filters
             </Button>
           </div>
@@ -244,24 +355,28 @@ export const UserManagementPage = () => {
                   <th
                     style={{ padding: '0.85rem 1rem', cursor: 'pointer', userSelect: 'none' }}
                     onClick={() => handleSortToggle('name')}
+                    title="Click to sort by Name"
                   >
                     Name {sort.sortBy === 'name' ? (sort.sortOrder === 'ASC' ? '▲' : '▼') : ''}
                   </th>
                   <th
                     style={{ padding: '0.85rem 1rem', cursor: 'pointer', userSelect: 'none' }}
                     onClick={() => handleSortToggle('email')}
+                    title="Click to sort by Email"
                   >
                     Email {sort.sortBy === 'email' ? (sort.sortOrder === 'ASC' ? '▲' : '▼') : ''}
                   </th>
                   <th
                     style={{ padding: '0.85rem 1rem', cursor: 'pointer', userSelect: 'none' }}
                     onClick={() => handleSortToggle('role')}
+                    title="Click to sort by Role"
                   >
                     Role {sort.sortBy === 'role' ? (sort.sortOrder === 'ASC' ? '▲' : '▼') : ''}
                   </th>
                   <th
                     style={{ padding: '0.85rem 1rem', cursor: 'pointer', userSelect: 'none' }}
                     onClick={() => handleSortToggle('address')}
+                    title="Click to sort by Address"
                   >
                     Address {sort.sortBy === 'address' ? (sort.sortOrder === 'ASC' ? '▲' : '▼') : ''}
                   </th>
@@ -318,48 +433,15 @@ export const UserManagementPage = () => {
           </div>
         )}
 
-        {/* Pagination Controls */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '1rem',
-            borderTop: '1px solid var(--border-subtle)',
-            fontSize: '0.85rem',
-            color: 'var(--text-muted)',
-            flexWrap: 'wrap',
-            gap: '0.75rem',
-          }}
-        >
-          <div>
-            Showing <strong>{users.length}</strong> of <strong>{pagination.totalItems}</strong> users
-          </div>
-
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <button
-              className="btn btn-secondary"
-              disabled={pagination.page <= 1}
-              onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
-              style={{ fontSize: '0.8rem', padding: '0.3rem 0.65rem' }}
-            >
-              &larr; Prev
-            </button>
-
-            <span>
-              Page <strong>{pagination.page}</strong> of <strong>{pagination.totalPages || 1}</strong>
-            </span>
-
-            <button
-              className="btn btn-secondary"
-              disabled={pagination.page >= pagination.totalPages}
-              onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
-              style={{ fontSize: '0.8rem', padding: '0.3rem 0.65rem' }}
-            >
-              Next &rarr;
-            </button>
-          </div>
-        </div>
+        {/* Reusable Pagination Component */}
+        <Pagination
+          currentPage={pagination.page}
+          totalPages={pagination.totalPages}
+          pageSize={pagination.limit}
+          totalItems={pagination.totalItems}
+          onPageChange={(newPage) => setPagination((prev) => ({ ...prev, page: newPage }))}
+          onPageSizeChange={(newSize) => setPagination((prev) => ({ ...prev, limit: newSize, page: 1 }))}
+        />
       </Card>
 
       {/* Add User Modal */}

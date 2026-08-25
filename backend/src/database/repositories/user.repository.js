@@ -56,6 +56,15 @@ const DEV_SEEDED_USERS = [
   },
 ];
 
+// Strict allowlist dictionary map to eliminate SQL injection risks
+const USER_SORT_ALLOWLIST = {
+  name: 'name',
+  email: 'email',
+  address: 'address',
+  role: 'role',
+  created_at: 'created_at',
+};
+
 class UserRepository extends BaseRepository {
   constructor() {
     super('users');
@@ -168,7 +177,7 @@ class UserRepository extends BaseRepository {
   }
 
   /**
-   * Search, filter, sort, and paginate users
+   * Search, filter, sort, and paginate users with SQL injection immune allowlist mapping
    */
   async findPaginated({
     search = '',
@@ -181,6 +190,10 @@ class UserRepository extends BaseRepository {
     limit = 10,
     offset = 0,
   }) {
+    // Map sortBy to strict safe column
+    const safeSortBy = USER_SORT_ALLOWLIST[sortBy] || 'created_at';
+    const safeSortOrder = sortOrder && sortOrder.toString().toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
     try {
       let whereClauses = ['1=1'];
       let params = [];
@@ -216,11 +229,6 @@ class UserRepository extends BaseRepository {
       const countSql = `SELECT COUNT(*) AS total FROM users ${whereSql}`;
       const countRes = await this.query(countSql, params);
       const total = parseInt(countRes.rows[0].total, 10);
-
-      const safeSortBy = ['name', 'email', 'address', 'role', 'created_at'].includes(sortBy)
-        ? sortBy
-        : 'created_at';
-      const safeSortOrder = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
       const pIndex = params.length + 1;
       const selectSql = `
@@ -258,10 +266,7 @@ class UserRepository extends BaseRepository {
         );
       }
 
-      const safeSortBy = ['name', 'email', 'address', 'role', 'created_at'].includes(sortBy)
-        ? sortBy
-        : 'created_at';
-      const isAsc = sortOrder.toUpperCase() === 'ASC';
+      const isAsc = safeSortOrder === 'ASC';
 
       filtered.sort((a, b) => {
         let valA = a[safeSortBy] || '';

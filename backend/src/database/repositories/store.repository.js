@@ -45,6 +45,17 @@ const DEV_SEEDED_STORES = [
   },
 ];
 
+// Strict allowlist dictionary map to eliminate SQL injection risks
+const STORE_SORT_ALLOWLIST = {
+  name: 's.name',
+  email: 's.email',
+  address: 's.address',
+  rating: 'average_rating',
+  average_rating: 'average_rating',
+  overall_rating: 'average_rating',
+  created_at: 's.created_at',
+};
+
 class StoreRepository extends BaseRepository {
   constructor() {
     super('stores');
@@ -161,7 +172,7 @@ class StoreRepository extends BaseRepository {
   }
 
   /**
-   * List stores with dynamic overall rating calculations, multi-field filtering, and sorting
+   * List stores with dynamic overall rating calculations, multi-field filtering, and SQL-safe sorting
    */
   async findPaginated({
     search = '',
@@ -174,6 +185,10 @@ class StoreRepository extends BaseRepository {
     limit = 10,
     offset = 0,
   }) {
+    // Map to strict safe SQL identifier
+    const safeSortExpression = STORE_SORT_ALLOWLIST[sortBy] || 's.created_at';
+    const safeSortOrder = sortOrder && sortOrder.toString().toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
     try {
       let whereClauses = ['1=1'];
       const params = [];
@@ -210,16 +225,6 @@ class StoreRepository extends BaseRepository {
       const countRes = await this.query(countSql, params);
       const total = parseInt(countRes.rows[0].total, 10);
 
-      const safeSortBy = ['name', 'email', 'address', 'rating', 'average_rating', 'created_at'].includes(sortBy)
-        ? sortBy
-        : 'created_at';
-      const safeSortOrder = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
-
-      const sortExpression =
-        safeSortBy === 'rating' || safeSortBy === 'average_rating'
-          ? 'average_rating'
-          : `s.${safeSortBy}`;
-
       const pIndex = params.length + 1;
       const selectSql = `
         SELECT s.id, s.name, s.email, s.address, s.owner_id, s.created_at, s.updated_at,
@@ -232,7 +237,7 @@ class StoreRepository extends BaseRepository {
         LEFT JOIN ratings r ON s.id = r.store_id
         ${whereSql}
         GROUP BY s.id, u.name, u.email
-        ORDER BY ${sortExpression} ${safeSortOrder}
+        ORDER BY ${safeSortExpression} ${safeSortOrder}
         LIMIT $${pIndex} OFFSET $${pIndex + 1}
       `;
 
@@ -263,18 +268,18 @@ class StoreRepository extends BaseRepository {
         );
       }
 
-      const safeSortBy = ['name', 'email', 'address', 'rating', 'average_rating', 'created_at'].includes(sortBy)
+      const isAsc = safeSortOrder === 'ASC';
+      const keyName = ['name', 'email', 'address', 'rating', 'average_rating', 'created_at'].includes(sortBy)
         ? sortBy
         : 'created_at';
-      const isAsc = sortOrder.toUpperCase() === 'ASC';
 
       filtered.sort((a, b) => {
-        let valA = a[safeSortBy] || '';
-        let valB = b[safeSortBy] || '';
-        if (safeSortBy === 'rating' || safeSortBy === 'average_rating') {
+        let valA = a[keyName] || '';
+        let valB = b[keyName] || '';
+        if (keyName === 'rating' || keyName === 'average_rating' || keyName === 'overall_rating') {
           valA = parseFloat(a.average_rating || 0);
           valB = parseFloat(b.average_rating || 0);
-        } else if (safeSortBy === 'created_at') {
+        } else if (keyName === 'created_at') {
           valA = new Date(valA).getTime();
           valB = new Date(valB).getTime();
         } else {

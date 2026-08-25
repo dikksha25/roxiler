@@ -4,8 +4,10 @@ import { Card } from '../common/Card';
 import { Button } from '../common/Button';
 import { Alert } from '../common/Alert';
 import { Spinner } from '../common/Spinner';
+import { Pagination } from '../common/Pagination';
 import { AddStoreModal } from './AddStoreModal';
 import { StoreDetailModal } from './StoreDetailModal';
+import { useDebounce } from '../../hooks/useDebounce';
 
 export const StoreManagementPage = () => {
   const [stores, setStores] = useState([]);
@@ -16,13 +18,19 @@ export const StoreManagementPage = () => {
     totalPages: 1,
   });
 
-  const [filters, setFilters] = useState({
-    search: '',
-    name: '',
-    email: '',
-    address: '',
-  });
+  // Filter input state
+  const [searchInput, setSearchInput] = useState('');
+  const [nameInput, setNameInput] = useState('');
+  const [emailInput, setEmailInput] = useState('');
+  const [addressInput, setAddressInput] = useState('');
 
+  // Debounced filter values
+  const debouncedSearch = useDebounce(searchInput, 300);
+  const debouncedName = useDebounce(nameInput, 300);
+  const debouncedEmail = useDebounce(emailInput, 300);
+  const debouncedAddress = useDebounce(addressInput, 300);
+
+  // Sorting state
   const [sort, setSort] = useState({
     sortBy: 'created_at',
     sortOrder: 'DESC',
@@ -31,10 +39,19 @@ export const StoreManagementPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   // Modals
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedStore, setSelectedStore] = useState(null);
+
+  // Calculate active filter count
+  const activeFiltersCount = [
+    debouncedSearch,
+    debouncedName,
+    debouncedEmail,
+    debouncedAddress,
+  ].filter(Boolean).length;
 
   const fetchStores = useCallback(async () => {
     setLoading(true);
@@ -45,10 +62,10 @@ export const StoreManagementPage = () => {
         limit: pagination.limit,
         sortBy: sort.sortBy,
         sortOrder: sort.sortOrder,
-        search: filters.search || undefined,
-        name: filters.name || undefined,
-        email: filters.email || undefined,
-        address: filters.address || undefined,
+        search: debouncedSearch || undefined,
+        name: debouncedName || undefined,
+        email: debouncedEmail || undefined,
+        address: debouncedAddress || undefined,
       };
 
       const res = await storeService.getStores(queryParams);
@@ -67,7 +84,21 @@ export const StoreManagementPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, pagination.limit, sort.sortBy, sort.sortOrder, filters]);
+  }, [
+    pagination.page,
+    pagination.limit,
+    sort.sortBy,
+    sort.sortOrder,
+    debouncedSearch,
+    debouncedName,
+    debouncedEmail,
+    debouncedAddress,
+  ]);
+
+  // Reset to page 1 whenever any filter or sort changes
+  useEffect(() => {
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  }, [debouncedSearch, debouncedName, debouncedEmail, debouncedAddress, sort]);
 
   useEffect(() => {
     fetchStores();
@@ -78,23 +109,14 @@ export const StoreManagementPage = () => {
       sortBy: field,
       sortOrder: prev.sortBy === field && prev.sortOrder === 'ASC' ? 'DESC' : 'ASC',
     }));
-    setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
-  const handleFilterChange = (field, value) => {
-    setFilters((prev) => ({ ...prev, [field]: value }));
-    setPagination((prev) => ({ ...prev, page: 1 }));
-  };
-
-  const handleClearFilters = () => {
-    setFilters({
-      search: '',
-      name: '',
-      email: '',
-      address: '',
-    });
+  const handleClearAllFilters = () => {
+    setSearchInput('');
+    setNameInput('');
+    setEmailInput('');
+    setAddressInput('');
     setSort({ sortBy: 'created_at', sortOrder: 'DESC' });
-    setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
   const handleStoreCreated = (newStore) => {
@@ -116,15 +138,41 @@ export const StoreManagementPage = () => {
         }}
       >
         <div>
-          <h2 style={{ fontSize: '1.5rem', margin: 0 }}>🏪 Commercial Store Registry</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <h2 style={{ fontSize: '1.5rem', margin: 0 }}>🏪 Commercial Store Registry</h2>
+            {activeFiltersCount > 0 && (
+              <span
+                style={{
+                  background: 'rgba(99, 102, 241, 0.2)',
+                  color: 'var(--accent-primary)',
+                  border: '1px solid rgba(99, 102, 241, 0.4)',
+                  fontSize: '0.75rem',
+                  padding: '0.15rem 0.5rem',
+                  borderRadius: 'var(--radius-full)',
+                  fontWeight: 700,
+                }}
+              >
+                {activeFiltersCount} Active {activeFiltersCount === 1 ? 'Filter' : 'Filters'}
+              </span>
+            )}
+          </div>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '0.25rem 0 0 0' }}>
-            Register verified stores, associate them with STORE_OWNER accounts, and inspect dynamic rating metrics.
+            Filter by Name, Email, Address, and Rating with server-side multi-criteria sorting and pagination.
           </p>
         </div>
 
-        <Button variant="primary" onClick={() => setIsAddOpen(true)}>
-          ➕ Add New Store
-        </Button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <Button
+            variant="secondary"
+            onClick={() => setShowAdvancedFilters((prev) => !prev)}
+            style={{ fontSize: '0.85rem' }}
+          >
+            {showAdvancedFilters ? '▲ Hide Filters' : '▼ Specific Filters'}
+          </Button>
+          <Button variant="primary" onClick={() => setIsAddOpen(true)}>
+            ➕ Add New Store
+          </Button>
+        </div>
       </div>
 
       {successMsg && (
@@ -134,7 +182,7 @@ export const StoreManagementPage = () => {
 
       {/* Filter & Search Bar */}
       <Card style={{ marginBottom: '1.5rem', padding: '1.25rem' }}>
-        <div className="grid grid-4" style={{ gap: '0.75rem', alignItems: 'flex-end' }}>
+        <div className="grid grid-2" style={{ gap: '0.75rem', alignItems: 'flex-end' }}>
           {/* Search */}
           <div>
             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-dim)', display: 'block', marginBottom: '0.25rem' }}>
@@ -144,23 +192,8 @@ export const StoreManagementPage = () => {
               type="text"
               className="input-field"
               placeholder="Search by name, email, address..."
-              value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
-              style={{ fontSize: '0.85rem', width: '100%' }}
-            />
-          </div>
-
-          {/* Filter by Name */}
-          <div>
-            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-dim)', display: 'block', marginBottom: '0.25rem' }}>
-              STORE NAME
-            </label>
-            <input
-              type="text"
-              className="input-field"
-              placeholder="Filter by store name..."
-              value={filters.name}
-              onChange={(e) => handleFilterChange('name', e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               style={{ fontSize: '0.85rem', width: '100%' }}
             />
           </div>
@@ -195,18 +228,79 @@ export const StoreManagementPage = () => {
               </button>
             </div>
           </div>
-
-          {/* Clear Filters */}
-          <div>
-            <Button
-              variant="secondary"
-              onClick={handleClearFilters}
-              style={{ width: '100%', fontSize: '0.85rem' }}
-            >
-              Clear Filters
-            </Button>
-          </div>
         </div>
+
+        {/* Specific Multi-Field Filters (Collapsible) */}
+        {showAdvancedFilters && (
+          <div
+            className="grid grid-3 fade-in"
+            style={{
+              gap: '0.75rem',
+              marginTop: '1rem',
+              paddingTop: '1rem',
+              borderTop: '1px solid var(--border-subtle)',
+              alignItems: 'flex-end',
+            }}
+          >
+            {/* Filter by Name */}
+            <div>
+              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-dim)', display: 'block', marginBottom: '0.25rem' }}>
+                FILTER BY STORE NAME
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                placeholder="Specific store name..."
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                style={{ fontSize: '0.85rem', width: '100%' }}
+              />
+            </div>
+
+            {/* Filter by Email */}
+            <div>
+              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-dim)', display: 'block', marginBottom: '0.25rem' }}>
+                FILTER BY STORE EMAIL
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                placeholder="Specific store email..."
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                style={{ fontSize: '0.85rem', width: '100%' }}
+              />
+            </div>
+
+            {/* Filter by Address */}
+            <div>
+              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-dim)', display: 'block', marginBottom: '0.25rem' }}>
+                FILTER BY ADDRESS
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                placeholder="Specific address..."
+                value={addressInput}
+                onChange={(e) => setAddressInput(e.target.value)}
+                style={{ fontSize: '0.85rem', width: '100%' }}
+              />
+            </div>
+          </div>
+        )}
+
+        {activeFiltersCount > 0 && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.75rem' }}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={handleClearAllFilters}
+              style={{ fontSize: '0.75rem', padding: '0.25rem 0.65rem' }}
+            >
+              ✕ Clear All Filters ({activeFiltersCount})
+            </button>
+          </div>
+        )}
       </Card>
 
       {/* Stores Listing Table */}
@@ -215,15 +309,15 @@ export const StoreManagementPage = () => {
           <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
             <Spinner size={36} />
             <p style={{ marginTop: '1rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-              Loading commercial store directory...
+              Executing server-side query...
             </p>
           </div>
         ) : stores.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
             <p style={{ color: 'var(--text-muted)', fontSize: '1rem', marginBottom: '1rem' }}>
-              No stores found matching the selected search criteria.
+              No stores found matching the selected filter criteria.
             </p>
-            <Button variant="secondary" onClick={handleClearFilters}>
+            <Button variant="secondary" onClick={handleClearAllFilters}>
               Reset Filters
             </Button>
           </div>
@@ -236,18 +330,21 @@ export const StoreManagementPage = () => {
                   <th
                     style={{ padding: '0.85rem 1rem', cursor: 'pointer', userSelect: 'none' }}
                     onClick={() => handleSortToggle('name')}
+                    title="Click to sort by Name"
                   >
                     Store Name {sort.sortBy === 'name' ? (sort.sortOrder === 'ASC' ? '▲' : '▼') : ''}
                   </th>
                   <th
                     style={{ padding: '0.85rem 1rem', cursor: 'pointer', userSelect: 'none' }}
                     onClick={() => handleSortToggle('email')}
+                    title="Click to sort by Email"
                   >
                     Email {sort.sortBy === 'email' ? (sort.sortOrder === 'ASC' ? '▲' : '▼') : ''}
                   </th>
                   <th
                     style={{ padding: '0.85rem 1rem', cursor: 'pointer', userSelect: 'none' }}
                     onClick={() => handleSortToggle('rating')}
+                    title="Click to sort by Overall Rating"
                   >
                     Overall Rating {sort.sortBy === 'rating' ? (sort.sortOrder === 'ASC' ? '▲' : '▼') : ''}
                   </th>
@@ -255,6 +352,7 @@ export const StoreManagementPage = () => {
                   <th
                     style={{ padding: '0.85rem 1rem', cursor: 'pointer', userSelect: 'none' }}
                     onClick={() => handleSortToggle('address')}
+                    title="Click to sort by Address"
                   >
                     Address {sort.sortBy === 'address' ? (sort.sortOrder === 'ASC' ? '▲' : '▼') : ''}
                   </th>
@@ -326,48 +424,15 @@ export const StoreManagementPage = () => {
           </div>
         )}
 
-        {/* Pagination Controls */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '1rem',
-            borderTop: '1px solid var(--border-subtle)',
-            fontSize: '0.85rem',
-            color: 'var(--text-muted)',
-            flexWrap: 'wrap',
-            gap: '0.75rem',
-          }}
-        >
-          <div>
-            Showing <strong>{stores.length}</strong> of <strong>{pagination.totalItems}</strong> stores
-          </div>
-
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <button
-              className="btn btn-secondary"
-              disabled={pagination.page <= 1}
-              onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
-              style={{ fontSize: '0.8rem', padding: '0.3rem 0.65rem' }}
-            >
-              &larr; Prev
-            </button>
-
-            <span>
-              Page <strong>{pagination.page}</strong> of <strong>{pagination.totalPages || 1}</strong>
-            </span>
-
-            <button
-              className="btn btn-secondary"
-              disabled={pagination.page >= pagination.totalPages}
-              onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
-              style={{ fontSize: '0.8rem', padding: '0.3rem 0.65rem' }}
-            >
-              Next &rarr;
-            </button>
-          </div>
-        </div>
+        {/* Reusable Pagination Component */}
+        <Pagination
+          currentPage={pagination.page}
+          totalPages={pagination.totalPages}
+          pageSize={pagination.limit}
+          totalItems={pagination.totalItems}
+          onPageChange={(newPage) => setPagination((prev) => ({ ...prev, page: newPage }))}
+          onPageSizeChange={(newSize) => setPagination((prev) => ({ ...prev, limit: newSize, page: 1 }))}
+        />
       </Card>
 
       {/* Add Store Modal */}
