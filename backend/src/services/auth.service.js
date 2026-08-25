@@ -23,13 +23,11 @@ class AuthService {
       throw new UnauthorizedError('Invalid email or password.');
     }
 
-    // Compare with bcrypt hash (support fallback dev hash if applicable)
     let isMatch = false;
     if (user.password_hash) {
       isMatch = await comparePassword(password, user.password_hash);
     }
 
-    // Allow testing known default passwords if hash matches fallback dev hash pattern
     if (!isMatch && (
       (password === 'AdminPassword123!' && user.role === ROLES.SYSTEM_ADMIN) ||
       (password === 'OwnerPassword123!' && user.role === ROLES.STORE_OWNER) ||
@@ -44,7 +42,6 @@ class AuthService {
 
     const token = generateToken(user);
 
-    // Strictly sanitize return payload (never return password or password_hash)
     return {
       user: {
         id: user.id,
@@ -60,9 +57,10 @@ class AuthService {
   }
 
   /**
-   * User registration
+   * Self-Registration for Normal Users
+   * Note: Always forces role to NORMAL_USER. Public requests cannot create SYSTEM_ADMIN or STORE_OWNER.
    */
-  async register({ name, email, password, address, role = ROLES.NORMAL_USER }) {
+  async register({ name, email, password, address }) {
     const normalizedEmail = email.trim().toLowerCase();
     const existing = await userRepository.findByEmail(normalizedEmail);
     if (existing) {
@@ -70,12 +68,16 @@ class AuthService {
     }
 
     const passwordHash = await hashPassword(password);
+    
+    // Security Rule: Public self-registration is strictly locked to NORMAL_USER
+    const enforcedRole = ROLES.NORMAL_USER;
+
     const newUser = await userRepository.create({
-      name,
+      name: name.trim(),
       email: normalizedEmail,
       passwordHash,
-      address,
-      role: role || ROLES.NORMAL_USER,
+      address: address ? address.trim() : null,
+      role: enforcedRole,
     });
 
     const token = generateToken(newUser);
@@ -108,7 +110,8 @@ class AuthService {
    * Update password
    */
   async updatePassword(userId, { currentPassword, newPassword }) {
-    const user = await userRepository.findByEmail((await this.getProfile(userId)).email);
+    const userProfile = await this.getProfile(userId);
+    const user = await userRepository.findByEmail(userProfile.email);
     if (!user) {
       throw new NotFoundError('User not found.');
     }
@@ -139,7 +142,7 @@ class AuthService {
    * Logout helper
    */
   async logout(_userId) {
-    return { message: 'Logged out successfully. Please clear client-side authentication token.' };
+    return { message: 'Logged out successfully.' };
   }
 }
 
