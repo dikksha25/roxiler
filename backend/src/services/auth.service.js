@@ -19,11 +19,9 @@ class AuthService {
     const normalizedEmail = email.trim().toLowerCase();
     const user = await userRepository.findByEmail(normalizedEmail);
 
-    if (!user) {
-      throw new UnauthorizedError('Invalid email or password.');
-    }
-
-    if (!user.password_hash) {
+    if (!user || !user.password_hash) {
+      const { DUMMY_BCRYPT_HASH } = require('../utils/password.util');
+      await comparePassword(password, DUMMY_BCRYPT_HASH);
       throw new UnauthorizedError('Invalid email or password.');
     }
 
