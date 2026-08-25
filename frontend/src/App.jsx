@@ -24,6 +24,18 @@ export function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Update document.title according to active route
+  useEffect(() => {
+    const routeTitles = {
+      home: 'StoreRate — Home',
+      stores: 'StoreRate — Browse Stores & Ratings',
+      login: 'StoreRate — User Login',
+      register: 'StoreRate — Account Registration',
+      dashboard: 'StoreRate — Enterprise Dashboard',
+    };
+    document.title = routeTitles[currentRoute] || 'StoreRate — Store Rating Platform';
+  }, [currentRoute]);
+
   // Listen to browser Back/Forward buttons and hash changes
   useEffect(() => {
     const handleHashChange = () => {
