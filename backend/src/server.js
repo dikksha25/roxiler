@@ -1,39 +1,40 @@
 const app = require('./app');
-const config = require('./config/env');
-const { testConnection, pool } = require('./config/db');
+const envConfig = require('./config/env.config');
+const { checkHealth, pool } = require('./database/connection');
 
 const startServer = async () => {
-  const server = app.listen(config.port, async () => {
+  const server = app.listen(envConfig.port, async () => {
     console.log('====================================================');
-    console.log(`🌟 Store Rating API Server running!`);
-    console.log(`📡 Environment: [${config.env}]`);
-    console.log(`🔗 API Base URL: http://localhost:${config.port}/api`);
-    console.log(`🩺 Health Check: http://localhost:${config.port}/api/health`);
+    console.log(`🚀 Store Rating Enterprise Backend API Running!`);
+    console.log(`📡 Environment: [${envConfig.env}]`);
+    console.log(`📌 API Version: [/api/${envConfig.apiVersion}]`);
+    console.log(`🔗 API Base URL: http://localhost:${envConfig.port}/api/${envConfig.apiVersion}`);
+    console.log(`🩺 Health Check: http://localhost:${envConfig.port}/api/${envConfig.apiVersion}/health`);
     console.log('====================================================');
 
     // Test database connection gracefully
     try {
-      const dbTest = await testConnection();
-      if (dbTest.connected) {
-        console.log(`✅ Database Status: Connected to [${dbTest.database}]`);
+      const dbStatus = await checkHealth();
+      if (dbStatus.connected) {
+        console.log(`✅ PostgreSQL Connected: [${dbStatus.database}]`);
       } else {
-        console.log(`⚠️ Database Status: ${dbTest.message}`);
-        console.log(`👉 Backend is running in resilient mode. Database operations will connect once PostgreSQL is active.`);
+        console.log(`ℹ️ PostgreSQL Status: ${dbStatus.message}`);
+        console.log(`👉 Backend running in resilient mode. Database queries will connect once PostgreSQL is active.`);
       }
     } catch (err) {
-      console.log(`⚠️ Database connection attempt: ${err.message}`);
+      console.warn(`Database connection check warning: ${err.message}`);
     }
   });
 
-  // Graceful shutdown handling
-  const shutdown = async (signal) => {
-    console.log(`\n🛑 Received ${signal}. Shutting down gracefully...`);
+  // Graceful Shutdown Logic
+  const gracefulShutdown = async (signal) => {
+    console.log(`\n🛑 Received ${signal}. Initiating graceful shutdown...`);
     server.close(async () => {
       console.log('🔒 HTTP server closed.');
       if (pool) {
         try {
           await pool.end();
-          console.log('📦 PostgreSQL pool disconnected.');
+          console.log('📦 PostgreSQL connection pool closed.');
         } catch (e) {
           console.error('Error closing PostgreSQL pool:', e.message);
         }
@@ -43,13 +44,13 @@ const startServer = async () => {
 
     // Force shutdown after timeout
     setTimeout(() => {
-      console.error('⚠️ Forcing process shutdown after timeout.');
+      console.error('⚠️ Forcing immediate process termination after shutdown timeout.');
       process.exit(1);
     }, 10000);
   };
 
-  process.on('SIGTERM', () => shutdown('SIGTERM'));
-  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 };
 
 startServer();

@@ -1,73 +1,54 @@
 const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const config = require('./config/env');
-const requestLogger = require('./middlewares/requestLogger');
-const { notFoundHandler, errorHandler } = require('./middlewares/errorMiddleware');
-const apiRoutes = require('./routes/apiRoutes');
+const envConfig = require('./config/env.config');
+const {
+  applySecurityMiddleware,
+  requestLogger,
+  rateLimiter,
+  notFoundHandler,
+  errorHandler,
+} = require('./middleware');
+const apiRoutes = require('./routes');
 
 const app = express();
 
-// Security Headers
-app.use(
-  helmet({
-    contentSecurityPolicy: false, // Allow dev tools / Vite during development
-    crossOriginResourcePolicy: { policy: 'cross-origin' },
-  })
-);
+// 1. Security Headers & CORS
+applySecurityMiddleware(app);
 
-// CORS Configuration
-const allowedOrigins = [
-  config.clientUrl,
-  'http://localhost:5173',
-  'http://localhost:3000',
-  'http://127.0.0.1:5173',
-];
+// 2. Request Body Parsers
+app.use(express.json({ limit: envConfig.security.bodyLimit }));
+app.use(express.urlencoded({ extended: true, limit: envConfig.security.bodyLimit }));
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, Postman)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin) || config.isDevelopment) {
-        return callback(null, true);
-      }
-      return callback(new Error(`Origin ${origin} not allowed by CORS`));
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  })
-);
-
-// Body Parsers
-app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: true, limit: '1mb' }));
-
-// Logging
+// 3. HTTP Request Logging
 app.use(requestLogger);
 
-// Root greeting endpoint
+// 4. Rate Limiting
+app.use('/api', rateLimiter());
+
+// 5. Root Info Endpoint
 app.get('/', (req, res) => {
   res.json({
-    service: 'Store Rating Application API',
+    service: 'Store Rating Application Backend API',
     status: 'online',
     version: '1.0.0',
-    endpoints: {
-      health: '/api/health',
-      auth: '/api/auth',
-      stores: '/api/stores',
-      ratings: '/api/ratings',
-      users: '/api/users',
+    apiVersion: envConfig.apiVersion,
+    docs: {
+      health: `/api/${envConfig.apiVersion}/health`,
+      auth: `/api/${envConfig.apiVersion}/auth`,
+      users: `/api/${envConfig.apiVersion}/users`,
+      stores: `/api/${envConfig.apiVersion}/stores`,
+      ratings: `/api/${envConfig.apiVersion}/ratings`,
+      dashboard: `/api/${envConfig.apiVersion}/dashboard`,
     },
   });
 });
 
-// API Routes
+// 6. Mount Master API Routes
 app.use('/api', apiRoutes);
 
-// Error Handling
+// 7. 404 Handler for undefined routes
 app.use(notFoundHandler);
+
+// 8. Global Centralized Error Boundary
 app.use(errorHandler);
 
 module.exports = app;
