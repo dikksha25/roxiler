@@ -28,13 +28,15 @@ const errorHandler = (err, req, res, next) => {
 
   // Handle PostgreSQL Database Errors
   if (err.code) {
+    const detailPayload = envConfig.isDevelopment ? { detail: err.detail } : null;
+
     // Unique violation (23505)
     if (err.code === '23505') {
       return ApiResponse.error(
         res,
         'A record with this unique identifier or email already exists.',
         HTTP_STATUS.CONFLICT,
-        { detail: err.detail }
+        detailPayload
       );
     }
     // Foreign key violation (23503)
@@ -43,16 +45,16 @@ const errorHandler = (err, req, res, next) => {
         res,
         'Referenced foreign entity does not exist.',
         HTTP_STATUS.BAD_REQUEST,
-        { detail: err.detail }
+        detailPayload
       );
     }
     // Check constraint violation (23514)
     if (err.code === '23514') {
       return ApiResponse.error(
         res,
-        'Data constraint violation (e.g., rating must be between 1 and 5).',
+        'Data constraint violation.',
         HTTP_STATUS.BAD_REQUEST,
-        { detail: err.detail }
+        detailPayload
       );
     }
   }
