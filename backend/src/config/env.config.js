@@ -19,6 +19,18 @@ const validateEnv = () => {
         errors.push(`Missing required environment variable in production: ${key}`);
       }
     }
+
+    if (process.env.JWT_SECRET) {
+      if (
+        process.env.JWT_SECRET.includes('dev_super_secret') ||
+        process.env.JWT_SECRET.includes('change_in_production')
+      ) {
+        errors.push('Cannot use development placeholder JWT_SECRET in production environment');
+      }
+      if (process.env.JWT_SECRET.length < 32) {
+        errors.push('JWT_SECRET must be at least 32 characters long in production');
+      }
+    }
   }
 
   // Check JWT secret strength in non-test
