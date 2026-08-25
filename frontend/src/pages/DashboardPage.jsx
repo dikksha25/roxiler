@@ -5,6 +5,7 @@ import { Badge } from '../components/common/Badge';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
 import { Alert } from '../components/common/Alert';
+import { AdminDashboard } from '../components/admin/AdminDashboard';
 import { ROLES, ROLE_LABELS } from '../constants/roles';
 
 export const DashboardPage = ({ onNavigate }) => {
@@ -48,6 +49,11 @@ export const DashboardPage = ({ onNavigate }) => {
 
   if (!user) return null;
 
+  // SYSTEM_ADMIN: Render dedicated Administration Console
+  if (user.role === ROLES.SYSTEM_ADMIN) {
+    return <AdminDashboard onNavigate={onNavigate} />;
+  }
+
   return (
     <div className="fade-in">
       {/* Header Banner */}
@@ -82,30 +88,7 @@ export const DashboardPage = ({ onNavigate }) => {
         </div>
       </div>
 
-      {/* Role-Specific Content */}
-      {user.role === ROLES.SYSTEM_ADMIN && (
-        <div style={{ marginBottom: '2rem' }}>
-          <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>🛡️ Platform Governance Overview</h2>
-          <div className="grid grid-3" style={{ marginBottom: '1.5rem' }}>
-            <Card>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Total Users</div>
-              <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-primary)' }}>6</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--accent-success)', marginTop: '0.25rem' }}>Active Accounts</div>
-            </Card>
-            <Card>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Registered Stores</div>
-              <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-secondary)' }}>3</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--accent-success)', marginTop: '0.25rem' }}>All Verified</div>
-            </Card>
-            <Card>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Total Ratings Submitted</div>
-              <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-warning)' }}>10</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Platform Avg: 4.7★</div>
-            </Card>
-          </div>
-        </div>
-      )}
-
+      {/* STORE_OWNER VIEW */}
       {user.role === ROLES.STORE_OWNER && (
         <div style={{ marginBottom: '2rem' }}>
           <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>🏪 My Managed Stores & Ratings</h2>
@@ -147,6 +130,7 @@ export const DashboardPage = ({ onNavigate }) => {
         </div>
       )}
 
+      {/* NORMAL_USER VIEW */}
       {user.role === ROLES.NORMAL_USER && (
         <div style={{ marginBottom: '2rem' }}>
           <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>⭐ Normal User Review Activities</h2>
