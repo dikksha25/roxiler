@@ -1,9 +1,8 @@
 const express = require('express');
 const ratingController = require('../../controllers/rating.controller');
 const {
-  submitRatingValidator,
-  listStoreRatingsValidator,
-  myRatingValidator,
+  createRatingValidator,
+  updateRatingValidator,
 } = require('../../validators/rating.validator');
 const validate = require('../../middleware/validate.middleware');
 const authenticate = require('../../middleware/auth.middleware');
@@ -12,22 +11,38 @@ const { ROLES } = require('../../constants/roles.constant');
 
 const router = express.Router();
 
-// Public: View ratings for a specific store
-router.get('/store/:storeId', validate(listStoreRatingsValidator), ratingController.getStoreRatings);
-
-// Normal User: View own rating for a store
-router.get('/store/:storeId/my-rating', authenticate, validate(myRatingValidator), ratingController.getMyRatingForStore);
-
-// Normal User: View all ratings submitted by user
-router.get('/my-ratings', authenticate, authorize(ROLES.NORMAL_USER), ratingController.getMyRatings);
-
-// Normal User: Submit or edit rating
+// NORMAL_USER: Submit rating for a store
 router.post(
   '/',
   authenticate,
   authorize(ROLES.NORMAL_USER),
-  validate(submitRatingValidator),
+  validate(createRatingValidator),
   ratingController.submitRating
+);
+
+// NORMAL_USER: Modify submitted rating
+router.patch(
+  '/:id',
+  authenticate,
+  authorize(ROLES.NORMAL_USER),
+  validate(updateRatingValidator),
+  ratingController.updateRating
+);
+
+// NORMAL_USER: View my submitted ratings
+router.get(
+  '/my-ratings',
+  authenticate,
+  authorize(ROLES.NORMAL_USER),
+  ratingController.getMyRatings
+);
+
+// STORE_OWNER & SYSTEM_ADMIN: View ratings for a specific store
+router.get(
+  '/store/:storeId',
+  authenticate,
+  authorize(ROLES.STORE_OWNER, ROLES.SYSTEM_ADMIN),
+  ratingController.getStoreRatings
 );
 
 module.exports = router;
