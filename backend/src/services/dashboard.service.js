@@ -3,6 +3,8 @@ const userRepository = require('../database/repositories/user.repository');
 const storeRepository = require('../database/repositories/store.repository');
 const ratingRepository = require('../database/repositories/rating.repository');
 const { ROLES } = require('../constants/roles.constant');
+const ForbiddenError = require('../errors/forbidden.error');
+const NotFoundError = require('../errors/notFound.error');
 
 class DashboardService {
   /**
@@ -169,6 +171,105 @@ class DashboardService {
       overallAverageRating: overallAverage,
       averageRating: overallAverage,
       stores: enrichedStores,
+    };
+  }
+
+  /**
+   * Retrieve detailed rating statistics and 1-to-5 star distribution for STORE_OWNER
+   */
+  async getStoreOwnerStatistics(ownerId, requestedStoreId = null) {
+    const oId = parseInt(ownerId, 10);
+    const owner = await userRepository.findUserProfileById(oId);
+
+    const ownedStores = await storeRepository.findByOwnerId(oId);
+
+    if (requestedStoreId) {
+      const targetSId = parseInt(requestedStoreId, 10);
+      const isOwned = ownedStores.some((s) => s.id === targetSId);
+      if (!isOwned) {
+        throw new ForbiddenError('You do not have permission to view statistics for this store.');
+      }
+    }
+
+    const storesToAnalyze = requestedStoreId
+      ? ownedStores.filter((s) => s.id === parseInt(requestedStoreId, 10))
+      : ownedStores;
+
+    let overallTotalRatings = 0;
+    let overallSumRating = 0;
+    const overallDistribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+
+    const storeStats = await Promise.all(
+      storesToAnalyze.map(async (st) => {
+        const ratings = await ratingRepository.findByStoreIdWithUserDetails(st.id);
+        const totalRatings = ratings.length;
+
+        const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+        let storeSum = 0;
+
+        ratings.forEach((r) => {
+          const score = parseInt(r.rating_value, 10);
+          if (distribution[score] !== undefined) {
+            distribution[score] += 1;
+            overallDistribution[score] += 1;
+          }
+          storeSum += score;
+        });
+
+        overallTotalRatings += totalRatings;
+        overallSumRating += storeSum;
+
+        const avg = totalRatings > 0 ? storeSum / totalRatings : 0;
+        const avgTwoDec = avg.toFixed(2);
+        const avgOneDec = avg.toFixed(1);
+
+        const distributionPercentages = {
+          1: totalRatings > 0 ? Math.round((distribution[1] / totalRatings) * 100) : 0,
+          2: totalRatings > 0 ? Math.round((distribution[2] / totalRatings) * 100) : 0,
+          3: totalRatings > 0 ? Math.round((distribution[3] / totalRatings) * 100) : 0,
+          4: totalRatings > 0 ? Math.round((distribution[4] / totalRatings) * 100) : 0,
+          5: totalRatings > 0 ? Math.round((distribution[5] / totalRatings) * 100) : 0,
+        };
+
+        return {
+          storeId: st.id,
+          storeName: st.name,
+          storeEmail: st.email,
+          storeAddress: st.address,
+          averageRating: avgTwoDec,
+          averageRatingOneDecimal: avgOneDec,
+          totalRatings,
+          totalReviews: totalRatings,
+          distribution,
+          distributionPercentages,
+        };
+      })
+    );
+
+    const overallAvg = overallTotalRatings > 0 ? overallSumRating / overallTotalRatings : 0;
+    const overallAvgTwoDec = overallAvg.toFixed(2);
+    const overallAvgOneDec = overallAvg.toFixed(1);
+
+    const overallDistributionPercentages = {
+      1: overallTotalRatings > 0 ? Math.round((overallDistribution[1] / overallTotalRatings) * 100) : 0,
+      2: overallTotalRatings > 0 ? Math.round((overallDistribution[2] / overallTotalRatings) * 100) : 0,
+      3: overallTotalRatings > 0 ? Math.round((overallDistribution[3] / overallTotalRatings) * 100) : 0,
+      4: overallTotalRatings > 0 ? Math.round((overallDistribution[4] / overallTotalRatings) * 100) : 0,
+      5: overallTotalRatings > 0 ? Math.round((overallDistribution[5] / overallTotalRatings) * 100) : 0,
+    };
+
+    return {
+      owner: owner ? { id: owner.id, name: owner.name, email: owner.email } : { id: oId, name: 'Store Owner' },
+      totalStores: storeStats.length,
+      overall: {
+        averageRating: overallAvgTwoDec,
+        averageRatingOneDecimal: overallAvgOneDec,
+        totalRatings: overallTotalRatings,
+        totalReviews: overallTotalRatings,
+        distribution: overallDistribution,
+        distributionPercentages: overallDistributionPercentages,
+      },
+      stores: storeStats,
     };
   }
 

@@ -17,6 +17,12 @@ const getOwnerDashboard = asyncHandler(async (req, res) => {
   return ApiResponse.success(res, 'Store Owner dashboard metrics retrieved successfully', data);
 });
 
+const getOwnerStatistics = asyncHandler(async (req, res) => {
+  const { storeId } = req.query;
+  const data = await dashboardService.getStoreOwnerStatistics(req.user.id, storeId);
+  return ApiResponse.success(res, 'Store Owner rating statistics retrieved successfully', data);
+});
+
 const getUserDashboard = asyncHandler(async (req, res) => {
   const data = await dashboardService.getNormalUserMetrics(req.user.id);
   return ApiResponse.success(res, 'Normal User activity metrics retrieved successfully', data);
@@ -26,5 +32,6 @@ module.exports = {
   getDashboard,
   getAdminDashboard,
   getOwnerDashboard,
+  getOwnerStatistics,
   getUserDashboard,
 };

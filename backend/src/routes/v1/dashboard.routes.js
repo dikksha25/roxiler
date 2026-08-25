@@ -11,6 +11,8 @@ router.get('/', authenticate, dashboardController.getDashboard);
 
 // Role-restricted dashboard endpoints
 router.get('/admin', authenticate, authorize(ROLES.SYSTEM_ADMIN), dashboardController.getAdminDashboard);
+router.get('/owner/statistics', authenticate, authorize(ROLES.STORE_OWNER, ROLES.SYSTEM_ADMIN), dashboardController.getOwnerStatistics);
+router.get('/store-owner/statistics', authenticate, authorize(ROLES.STORE_OWNER, ROLES.SYSTEM_ADMIN), dashboardController.getOwnerStatistics);
 router.get('/owner', authenticate, authorize(ROLES.STORE_OWNER, ROLES.SYSTEM_ADMIN), dashboardController.getOwnerDashboard);
 router.get('/store-owner', authenticate, authorize(ROLES.STORE_OWNER, ROLES.SYSTEM_ADMIN), dashboardController.getOwnerDashboard);
 router.get('/user', authenticate, authorize(ROLES.NORMAL_USER), dashboardController.getUserDashboard);
