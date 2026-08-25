@@ -5,6 +5,8 @@ const DEV_SEEDED_RATINGS = [
     id: 1,
     user_id: 4,
     user_name: 'Sarah Jenkins',
+    user_email: 'sarah.jenkins@example.com',
+    user_address: '742 Evergreen Terrace, Sector 4, Springfield',
     store_id: 1,
     store_name: 'FreshMart Supermarket & Organics',
     rating_value: 5,
@@ -16,6 +18,8 @@ const DEV_SEEDED_RATINGS = [
     id: 2,
     user_id: 4,
     user_name: 'Sarah Jenkins',
+    user_email: 'sarah.jenkins@example.com',
+    user_address: '742 Evergreen Terrace, Sector 4, Springfield',
     store_id: 2,
     store_name: 'Nexus Specialty Coffee & Bakery Lounge',
     rating_value: 5,
@@ -27,6 +31,8 @@ const DEV_SEEDED_RATINGS = [
     id: 3,
     user_id: 5,
     user_name: 'David Kim',
+    user_email: 'david.kim@example.com',
+    user_address: '1208 Elmwood Park Lane, Greenfield Hills',
     store_id: 1,
     store_name: 'FreshMart Supermarket & Organics',
     rating_value: 4,
@@ -147,22 +153,67 @@ class RatingRepository extends BaseRepository {
     }
   }
 
-  async findByStoreId(storeId) {
+  /**
+   * Find ratings for a store with customer/user details (Name, Email, Address)
+   */
+  async findByStoreIdWithUserDetails(storeId) {
     const sId = parseInt(storeId, 10);
     try {
       const res = await this.query(
         `SELECT r.id, r.user_id, r.store_id, r.rating_value, r.comment, r.created_at, r.updated_at,
-                u.name AS user_name, u.email AS user_email
+                u.name AS user_name, u.email AS user_email, u.address AS user_address
          FROM ratings r
          JOIN users u ON r.user_id = u.id
          WHERE r.store_id = $1
          ORDER BY r.created_at DESC`,
         [sId]
       );
-      return res.rows;
+      return res.rows.map((row) => ({
+        id: row.id,
+        rating_value: row.rating_value,
+        rating: row.rating_value,
+        comment: row.comment,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        user: {
+          id: row.user_id,
+          name: row.user_name,
+          email: row.user_email,
+          address: row.user_address,
+        },
+      }));
     } catch (err) {
-      return this.inMemoryRatings.filter((r) => r.store_id === sId);
+      const userRepository = require('./user.repository');
+      const ratings = this.inMemoryRatings.filter((r) => r.store_id === sId);
+
+      return ratings.map((r) => {
+        const user = (userRepository.inMemoryUsers || []).find((u) => u.id === r.user_id) || {
+          id: r.user_id,
+          name: r.user_name || 'Customer User',
+          email: r.user_email || 'user@example.com',
+          address: r.user_address || 'Springfield',
+        };
+
+        return {
+          id: r.id,
+          rating_value: r.rating_value,
+          rating: r.rating_value,
+          comment: r.comment,
+          created_at: r.created_at,
+          updated_at: r.updated_at,
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            address: user.address,
+          },
+        };
+      });
     }
+  }
+
+  async findByStoreId(storeId) {
+    return await this.findByStoreIdWithUserDetails(storeId);
   }
 
   async findByUserId(userId) {

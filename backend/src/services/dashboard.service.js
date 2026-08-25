@@ -114,39 +114,62 @@ class DashboardService {
   }
 
   /**
-   * Retrieve metrics for Store Owner
+   * Retrieve telemetry for authenticated Store Owner
+   * Returns owned stores, dynamic average rating, rating counts, and customer reviews with user profiles
    */
   async getStoreOwnerMetrics(ownerId) {
-    try {
-      const storesRes = await storeRepository.findByOwnerId(ownerId);
-      let totalReviews = 0;
-      let sumRating = 0;
-      let storeCount = storesRes.length;
+    const oId = parseInt(ownerId, 10);
+    const owner = await userRepository.findUserProfileById(oId);
 
-      storesRes.forEach((s) => {
-        const count = parseInt(s.rating_count, 10) || 0;
-        const avg = parseFloat(s.average_rating) || 0;
-        totalReviews += count;
-        sumRating += avg * count;
-      });
+    const stores = await storeRepository.findByOwnerId(oId);
 
-      const overallAverage = totalReviews > 0 ? (sumRating / totalReviews).toFixed(2) : '0.00';
+    let totalRatingsReceived = 0;
+    let sumRating = 0;
 
-      return {
-        storesCount: storeCount,
-        totalReviews,
-        overallAverageRating: overallAverage,
-        stores: storesRes,
-      };
-    } catch (err) {
-      const stores = (storeRepository.inMemoryStores || []).filter((s) => s.owner_id === parseInt(ownerId, 10));
-      return {
-        storesCount: stores.length,
-        totalReviews: stores.reduce((acc, s) => acc + (s.rating_count || 0), 0),
-        overallAverageRating: '4.70',
-        stores,
-      };
-    }
+    const enrichedStores = await Promise.all(
+      stores.map(async (st) => {
+        const storeRatings = await ratingRepository.findByStoreIdWithUserDetails(st.id);
+        const ratingCount = storeRatings.length;
+
+        let avgRating = '0.00';
+        if (ratingCount > 0) {
+          const totalVal = storeRatings.reduce((acc, r) => acc + r.rating_value, 0);
+          avgRating = (totalVal / ratingCount).toFixed(2);
+          sumRating += totalVal;
+          totalRatingsReceived += ratingCount;
+        }
+
+        return {
+          id: st.id,
+          name: st.name,
+          email: st.email,
+          address: st.address,
+          average_rating: avgRating,
+          overall_rating: avgRating,
+          rating_count: ratingCount,
+          totalRatings: ratingCount,
+          created_at: st.created_at,
+          ratings: storeRatings,
+          customer_ratings: storeRatings,
+        };
+      })
+    );
+
+    const overallAverage =
+      totalRatingsReceived > 0 ? (sumRating / totalRatingsReceived).toFixed(2) : '0.00';
+
+    return {
+      owner: owner
+        ? { id: owner.id, name: owner.name, email: owner.email }
+        : { id: oId, name: 'Store Owner', email: '' },
+      totalStores: enrichedStores.length,
+      storesCount: enrichedStores.length,
+      totalRatingsReceived,
+      totalReviews: totalRatingsReceived,
+      overallAverageRating: overallAverage,
+      averageRating: overallAverage,
+      stores: enrichedStores,
+    };
   }
 
   /**
@@ -154,10 +177,10 @@ class DashboardService {
    */
   async getNormalUserMetrics(userId) {
     try {
-      const myRatings = await ratingRepository.findUserRatingsPaginated(userId, { limit: 10, offset: 0 });
+      const myRatings = await ratingRepository.findByUserId(userId);
       return {
-        submittedRatingsCount: myRatings.total,
-        recentRatings: myRatings.items,
+        submittedRatingsCount: myRatings.length,
+        recentRatings: myRatings,
       };
     } catch (err) {
       const myRatings = (ratingRepository.inMemoryRatings || []).filter((r) => r.user_id === parseInt(userId, 10));
