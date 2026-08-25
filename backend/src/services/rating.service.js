@@ -1,5 +1,6 @@
 const ratingRepository = require('../database/repositories/rating.repository');
 const storeRepository = require('../database/repositories/store.repository');
+const PaginationUtil = require('../utils/pagination.util');
 const NotFoundError = require('../errors/notFound.error');
 const ConflictError = require('../errors/conflict.error');
 const BadRequestError = require('../errors/badRequest.error');
@@ -114,6 +115,34 @@ class RatingService {
     });
 
     return updated;
+  }
+
+  /**
+   * Dedicated paginated customer ratings retrieval for STORE_OWNER
+   */
+  async getOwnerRatings(ownerId, parsedQuery) {
+    const {
+      limit,
+      offset,
+      page,
+      search,
+      storeId,
+      sortBy,
+      sortOrder,
+    } = parsedQuery;
+
+    const { items, total } = await ratingRepository.findPaginatedForOwner(ownerId, {
+      search,
+      storeId,
+      sortBy,
+      sortOrder,
+      limit,
+      offset,
+    });
+
+    const pagination = PaginationUtil.buildMeta(total, page, limit);
+
+    return { ratings: items, pagination };
   }
 
   /**

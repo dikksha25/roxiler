@@ -1,5 +1,6 @@
 const ratingService = require('../services/rating.service');
 const ApiResponse = require('../utils/apiResponse.util');
+const QueryParamsUtil = require('../utils/queryParams.util');
 const asyncHandler = require('../middleware/asyncHandler.middleware');
 const MESSAGES = require('../constants/messages.constant');
 
@@ -41,6 +42,19 @@ const updateRating = asyncHandler(async (req, res) => {
   return ApiResponse.success(res, MESSAGES.RATING_UPDATED || 'Rating updated successfully', updated);
 });
 
+const getOwnerRatings = asyncHandler(async (req, res) => {
+  const parsedQuery = QueryParamsUtil.parse(req.query, {
+    allowedSortFields: ['name', 'user_name', 'email', 'user_email', 'rating', 'rating_value', 'date', 'created_at'],
+    defaultSortBy: 'created_at',
+  });
+
+  parsedQuery.storeId = req.query.storeId ? parseInt(req.query.storeId, 10) : null;
+  parsedQuery.search = req.query.search || '';
+
+  const { ratings, pagination } = await ratingService.getOwnerRatings(req.user.id, parsedQuery);
+  return ApiResponse.success(res, 'Store owner ratings retrieved successfully', { ratings }, 200, pagination);
+});
+
 const getMyRatings = asyncHandler(async (req, res) => {
   const ratings = await ratingService.getUserRatings(req.user.id);
   return ApiResponse.success(res, 'User ratings retrieved successfully', ratings);
@@ -56,6 +70,7 @@ module.exports = {
   submitRating,
   modifyRatingByStoreId,
   updateRating,
+  getOwnerRatings,
   getMyRatings,
   getStoreRatings,
 };

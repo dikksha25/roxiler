@@ -42,6 +42,17 @@ const DEV_SEEDED_RATINGS = [
   },
 ];
 
+const OWNER_RATING_SORT_ALLOWLIST = {
+  name: 'u.name',
+  user_name: 'u.name',
+  email: 'u.email',
+  user_email: 'u.email',
+  rating: 'r.rating_value',
+  rating_value: 'r.rating_value',
+  date: 'r.created_at',
+  created_at: 'r.created_at',
+};
+
 class RatingRepository extends BaseRepository {
   constructor() {
     super('ratings');
@@ -150,6 +161,164 @@ class RatingRepository extends BaseRepository {
         return { ...existing };
       }
       return null;
+    }
+  }
+
+  /**
+   * Dedicated paginated query for STORE_OWNER to view all ratings received by their stores
+   */
+  async findPaginatedForOwner(ownerId, {
+    search = '',
+    storeId = null,
+    sortBy = 'created_at',
+    sortOrder = 'DESC',
+    limit = 10,
+    offset = 0,
+  }) {
+    const oId = parseInt(ownerId, 10);
+    const safeSortExpression = OWNER_RATING_SORT_ALLOWLIST[sortBy] || 'r.created_at';
+    const safeSortOrder = sortOrder && sortOrder.toString().toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
+    try {
+      let whereClauses = ['s.owner_id = $1'];
+      const params = [oId];
+
+      if (storeId) {
+        params.push(parseInt(storeId, 10));
+        whereClauses.push(`r.store_id = $${params.length}`);
+      }
+
+      if (search) {
+        params.push(`%${search.trim()}%`);
+        const pIdx = params.length;
+        whereClauses.push(`(u.name ILIKE $${pIdx} OR u.email ILIKE $${pIdx} OR s.name ILIKE $${pIdx})`);
+      }
+
+      const whereSql = `WHERE ${whereClauses.join(' AND ')}`;
+
+      const countSql = `
+        SELECT COUNT(r.id)::int AS total
+        FROM ratings r
+        JOIN stores s ON r.store_id = s.id
+        JOIN users u ON r.user_id = u.id
+        ${whereSql}
+      `;
+      const countRes = await this.query(countSql, params);
+      const total = parseInt(countRes.rows[0].total, 10);
+
+      const limitIdx = params.length + 1;
+      const offsetIdx = params.length + 2;
+
+      const selectSql = `
+        SELECT r.id, r.rating_value, r.comment, r.created_at, r.updated_at,
+               r.store_id, s.name AS store_name, s.address AS store_address,
+               u.id AS user_id, u.name AS user_name, u.email AS user_email, u.address AS user_address
+        FROM ratings r
+        JOIN stores s ON r.store_id = s.id
+        JOIN users u ON r.user_id = u.id
+        ${whereSql}
+        ORDER BY ${safeSortExpression} ${safeSortOrder}
+        LIMIT $${limitIdx} OFFSET $${offsetIdx}
+      `;
+
+      const dataRes = await this.query(selectSql, [...params, limit, offset]);
+
+      const items = dataRes.rows.map((row) => ({
+        id: row.id,
+        rating_value: row.rating_value,
+        rating: row.rating_value,
+        comment: row.comment,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        store_id: row.store_id,
+        store_name: row.store_name,
+        store_address: row.store_address,
+        user: {
+          id: row.user_id,
+          name: row.user_name,
+          email: row.user_email,
+          address: row.user_address,
+        },
+      }));
+
+      return { items, total };
+    } catch (err) {
+      const storeRepository = require('./store.repository');
+      const userRepository = require('./user.repository');
+
+      const ownerStores = (storeRepository.inMemoryStores || []).filter((s) => s.owner_id === oId);
+      const ownerStoreIds = ownerStores.map((s) => s.id);
+
+      let filtered = this.inMemoryRatings.filter((r) => ownerStoreIds.includes(r.store_id));
+
+      if (storeId) {
+        filtered = filtered.filter((r) => r.store_id === parseInt(storeId, 10));
+      }
+
+      let mapped = filtered.map((r) => {
+        const store = ownerStores.find((s) => s.id === r.store_id) || { name: 'Owned Store', address: 'Marketplace' };
+        const user = (userRepository.inMemoryUsers || []).find((u) => u.id === r.user_id) || {
+          id: r.user_id,
+          name: r.user_name || 'Customer User',
+          email: r.user_email || 'user@example.com',
+          address: r.user_address || 'Springfield',
+        };
+
+        return {
+          id: r.id,
+          rating_value: r.rating_value,
+          rating: r.rating_value,
+          comment: r.comment,
+          created_at: r.created_at,
+          updated_at: r.updated_at,
+          store_id: r.store_id,
+          store_name: store.name,
+          store_address: store.address,
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            address: user.address,
+          },
+        };
+      });
+
+      if (search) {
+        const s = search.trim().toLowerCase();
+        mapped = mapped.filter(
+          (m) =>
+            m.user.name.toLowerCase().includes(s) ||
+            m.user.email.toLowerCase().includes(s) ||
+            m.store_name.toLowerCase().includes(s)
+        );
+      }
+
+      const isAsc = safeSortOrder === 'ASC';
+      mapped.sort((a, b) => {
+        let valA = '';
+        let valB = '';
+
+        if (sortBy === 'name' || sortBy === 'user_name') {
+          valA = a.user.name.toLowerCase();
+          valB = b.user.name.toLowerCase();
+        } else if (sortBy === 'email' || sortBy === 'user_email') {
+          valA = a.user.email.toLowerCase();
+          valB = b.user.email.toLowerCase();
+        } else if (sortBy === 'rating' || sortBy === 'rating_value') {
+          valA = a.rating_value;
+          valB = b.rating_value;
+        } else {
+          valA = new Date(a.created_at).getTime();
+          valB = new Date(b.created_at).getTime();
+        }
+
+        if (valA < valB) return isAsc ? -1 : 1;
+        if (valA > valB) return isAsc ? 1 : -1;
+        return 0;
+      });
+
+      const items = mapped.slice(offset, offset + limit);
+      return { items, total: mapped.length };
     }
   }
 

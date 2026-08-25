@@ -75,8 +75,40 @@ const updateRatingValidator = [
     .withMessage('Comment cannot exceed 500 characters'),
 ];
 
+const listOwnerRatingsValidator = [
+  query('page')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Page must be an integer greater than 0'),
+
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100'),
+
+  query('sortBy')
+    .optional()
+    .isIn(['name', 'user_name', 'email', 'user_email', 'rating', 'rating_value', 'date', 'created_at'])
+    .withMessage('sortBy must be one of: [name, user_name, email, user_email, rating, rating_value, date, created_at]'),
+
+  query('sortOrder')
+    .optional()
+    .isIn(['asc', 'desc', 'ASC', 'DESC'])
+    .withMessage('sortOrder must be asc or desc'),
+
+  query('storeId')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('storeId must be a positive integer'),
+
+  query('search')
+    .optional()
+    .trim(),
+];
+
 module.exports = {
   createRatingValidator,
   updateRatingByStoreIdValidator,
   updateRatingValidator,
+  listOwnerRatingsValidator,
 };
