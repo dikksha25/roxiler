@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { dashboardService } from '../../services/dashboardService';
 import { Card } from '../common/Card';
-import { Badge } from '../common/Badge';
 import { Alert } from '../common/Alert';
 import { Spinner } from '../common/Spinner';
-import { ROLE_LABELS } from '../../constants/roles';
+import { UserManagementPage } from './UserManagementPage';
 
 export const AdminDashboard = ({ onNavigate }) => {
   const [activeTab, setActiveTab] = useState('overview'); // overview, users, stores, ratings
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [searchFilter, setSearchFilter] = useState('');
 
   const fetchStats = async () => {
     setLoading(true);
@@ -56,7 +54,7 @@ export const AdminDashboard = ({ onNavigate }) => {
     );
   }
 
-  const { stats = {}, roleBreakdown = {}, recentUsers = [], recentStores = [], recentRatings = [] } = data || {};
+  const { stats = {}, roleBreakdown = {}, recentStores = [], recentRatings = [] } = data || {};
 
   return (
     <div className="fade-in">
@@ -282,53 +280,8 @@ export const AdminDashboard = ({ onNavigate }) => {
         </div>
       )}
 
-      {/* TAB 2: USERS */}
-      {activeTab === 'users' && (
-        <Card>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-            <h3 style={{ margin: 0, fontSize: '1.2rem' }}>Registered Users Directory</h3>
-            <input
-              type="text"
-              placeholder="Search users by name or email..."
-              className="input-field"
-              style={{ maxWidth: '300px', fontSize: '0.85rem' }}
-              value={searchFilter}
-              onChange={(e) => setSearchFilter(e.target.value)}
-            />
-          </div>
-
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}>
-                  <th style={{ padding: '0.75rem 1rem' }}>ID</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Name</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Email</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Role</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Address</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentUsers
-                  .filter((u) => !searchFilter || u.name.toLowerCase().includes(searchFilter.toLowerCase()) || u.email.toLowerCase().includes(searchFilter.toLowerCase()))
-                  .map((u) => (
-                    <tr key={u.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
-                      <td style={{ padding: '0.75rem 1rem', color: 'var(--text-dim)' }}>#{u.id}</td>
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>{u.name}</td>
-                      <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>{u.email}</td>
-                      <td style={{ padding: '0.75rem 1rem' }}>
-                        <Badge role={u.role} />
-                      </td>
-                      <td style={{ padding: '0.75rem 1rem', color: 'var(--text-dim)', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {u.address || '—'}
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      )}
+      {/* TAB 2: USER MANAGEMENT (Full Featured) */}
+      {activeTab === 'users' && <UserManagementPage />}
 
       {/* TAB 3: STORES */}
       {activeTab === 'stores' && (
