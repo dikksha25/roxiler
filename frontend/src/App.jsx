@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider } from './context/AuthContext';
 import { Navbar } from './components/layout/Navbar';
 import { HomePage } from './pages/HomePage';
@@ -8,13 +8,32 @@ import { RegisterPage } from './pages/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
-export function App() {
-  const [currentRoute, setCurrentRoute] = useState('home');
+const getInitialRoute = () => {
+  const hash = window.location.hash.replace('#/', '').replace('#', '');
+  const validRoutes = ['home', 'stores', 'login', 'register', 'dashboard'];
+  return validRoutes.includes(hash) ? hash : 'home';
+};
 
+export function App() {
+  const [currentRoute, setCurrentRoute] = useState(getInitialRoute);
+
+  // Synchronize route changes with browser history & URL hash
   const navigate = (route) => {
     setCurrentRoute(route);
+    window.location.hash = `/${route}`;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // Listen to browser Back/Forward buttons and hash changes
+  useEffect(() => {
+    const handleHashChange = () => {
+      const route = getInitialRoute();
+      setCurrentRoute(route);
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   const renderRoute = () => {
     switch (currentRoute) {
