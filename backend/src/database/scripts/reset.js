@@ -7,6 +7,11 @@ const resetDatabase = async () => {
   console.log('⚠️  DEVELOPMENT DATABASE RESET');
   console.log('====================================================');
 
+  if (process.env.NODE_ENV === 'production') {
+    console.error('⛔ FATAL: Database reset is strictly prohibited in PRODUCTION environment.');
+    process.exit(1);
+  }
+
   const health = await checkHealth();
   if (!health.connected) {
     console.error('❌ Cannot connect to PostgreSQL server:', health.message);

@@ -12,6 +12,11 @@ const apiRoutes = require('./routes');
 
 const app = express();
 
+// Trust reverse proxy (Nginx, AWS ALB, Render, Cloudflare) in production
+if (envConfig.isProduction) {
+  app.set('trust proxy', 1);
+}
+
 // 0. Correlation ID Middleware
 app.use((req, res, next) => {
   const reqId = req.headers['x-request-id'] || (crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(16).toString('hex'));

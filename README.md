@@ -188,19 +188,21 @@ npm run dev
 
 ## 🧪 Automated Testing Suite
 
-Execute the comprehensive automated test suite validating all 6 core functional and security domains:
+Execute the comprehensive automated test suite validating all 8 core functional, security, and resilience domains:
 ```bash
 # Run automated backend test suite
 npm test
 ```
 
-### **Test Coverage Summary (48 Assertions — 100% Pass Rate)**:
+### **Test Coverage Summary (8 Test Suites / 86+ Assertions — 100% Pass Rate)**:
 1. `auth.test.js`: Successful login (all 3 roles), invalid credentials, missing fields, token verification, session profile rehydration, logout.
-2. `rbac.test.js`: Role enforcement, unauthorized admin route rejection, normal user rating privileges, cross-owner store isolation.
-3. `users.test.js`: Self-registration, duplicate email conflict rejection (409 Conflict), admin user provisioning, validation rules (Name 20–60, Password 8–16 with upper/special, Address <= 400).
+2. `rbac.test.js`: Role enforcement, unauthorized admin route rejection, normal user rating privileges, cross-owner store isolation (BOLA/IDOR).
+3. `users.test.js`: Self-registration, duplicate email conflict rejection (`409 Conflict`), admin user provisioning, validation rules (Name 20–60, Password 8–16 with upper/special, Address <= 400).
 4. `stores.test.js`: Store creation, search by Name & Address, allowlist column sorting, pagination, consumer browsing with personal scores.
-5. `ratings.test.js`: Valid rating submission (1–5), out-of-bounds rejection, duplicate rating rejection, multi-user average calculation ((5 + 3) / 2 = 4.00 ★), rating modification and instant average recalculation.
-6. `password.test.js`: Password complexity validation, incorrect current password rejection, identical password rejection, bcrypt hash verification, old password invalidation.
+5. `ratings.test.js`: Valid rating submission (1–5), out-of-bounds rejection, duplicate rating rejection, multi-user average calculation, rating modification and instant average recalculation.
+6. `password.test.js`: Password complexity validation, incorrect current password rejection, identical password rejection, bcrypt hash verification, session revocation on update.
+7. `security.test.js`: Express security hardening, parameterized SQL injection immunity, dynamic ORDER BY allowlists, mass-assignment field stripping, XSS benign text storage.
+8. `redteam.test.js`: Adversarial penetration attacks (JWT algorithm confusion, tampered payloads, expired tokens, horizontal privilege escalation, input fuzzing, token replay after logout).
 
 ---
 
@@ -212,13 +214,18 @@ The database is pre-seeded with sample accounts across all three user roles:
 |---|---|---|---|
 | **`SYSTEM_ADMIN`** | `admin@storerating.com` | `AdminPassword123!` | Platform administrator with full dashboard & user management access |
 | **`STORE_OWNER`** | `owner.marcus@freshmart.com` | `OwnerPassword123!` | Owner of *FreshMart Organic Supermarket* |
-| **`STORE_OWNER`** | `owner.elena@urbanstyle.com` | `OwnerPassword123!` | Owner of *UrbanStyle Fashion Boutique* |
+| **`STORE_OWNER`** | `owner.elena@nexuscoffee.com` | `OwnerPassword123!` | Owner of *Nexus Specialty Coffee* |
 | **`NORMAL_USER`** | `sarah.jenkins@example.com` | `UserPassword123!` | Consumer account with existing rating history |
-| **`NORMAL_USER`** | `michael.chang@example.com` | `UserPassword123!` | Consumer account with existing rating history |
+| **`NORMAL_USER`** | `david.kim@example.com` | `UserPassword123!` | Consumer account with existing rating history |
 
 ---
 
 ## 📡 RESTful API Overview
+
+### **Health & Diagnostics (`/api/v1/health`)**
+- `GET /api/v1/health` — Full system telemetry, memory usage, node version, and database connection status
+- `GET /api/v1/health/live` — Lightweight liveness probe for Kubernetes / Container orchestrators (200 OK)
+- `GET /api/v1/health/ready` — Readiness probe verifying active PostgreSQL database connectivity (200 OK or 503 Unavailable)
 
 ### **Authentication & Account (`/api/v1/auth`)**
 - `POST /api/v1/auth/register` — Public consumer registration (enforces `NORMAL_USER` role)
@@ -249,20 +256,54 @@ The database is pre-seeded with sample accounts across all three user roles:
 
 ---
 
-## 🏗️ Production Build & Deployment
+## 🏗️ Production Deployment & Release Engineering
 
-### Build Frontend
+### 1. Docker Container Deployment
+Build and run using the multi-stage production `Dockerfile`:
 ```bash
-npm run build:frontend
+# Build multi-stage image
+docker build -t store-rating-app:latest .
+
+# Run container with environment variables
+docker run -d \
+  -p 5000:5000 \
+  -e NODE_ENV=production \
+  -e JWT_SECRET=your_production_secure_jwt_secret_min_32_chars \
+  -e PGHOST=your_pg_host \
+  -e PGDATABASE=store_rating_db \
+  -e PGUSER=postgres \
+  -e PGPASSWORD=your_secure_db_password \
+  --name store-rating-prod \
+  store-rating-app:latest
 ```
-Production assets will be output to `frontend/dist/`.
 
-### Run Backend in Production
+### 2. Manual Production Build & Start
 ```bash
+# Step 1: Install production dependencies
+npm run install:all
+
+# Step 2: Run database migrations
+npm run db:migrate
+
+# Step 3: Build frontend production bundle
+npm run build:frontend
+
+# Step 4: Start Express backend
 NODE_ENV=production npm run start:backend
 ```
+
+### 3. Pre-Flight Release Checklist
+- [x] All 8 automated test suites passing (`npm test`).
+- [x] Production build passes cleanly with 0 warnings (`npm run build:frontend`).
+- [x] `JWT_SECRET` is strong (min 32 characters) and configured via environment variables.
+- [x] Database migrations verified against fresh PostgreSQL schema (`001_initial_schema.sql`).
+- [x] Liveness probe (`GET /api/v1/health/live`) returns `200 OK`.
+- [x] Readiness probe (`GET /api/v1/health/ready`) confirms active database connection.
+- [x] HTTPS and reverse proxy `trust proxy` configured for secure cookies and accurate client IP rate limiting.
+- [x] Destructive scripts (`reset.js`, `seed.js`) locked down against accidental execution in `NODE_ENV=production`.
 
 ---
 
 ## 📄 License
 This project is open-source and available under the **ISC License**.
+

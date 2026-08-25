@@ -7,6 +7,11 @@ const runSeed = async () => {
   console.log('🌱 PostgreSQL Realistic Data Seeder');
   console.log('====================================================');
 
+  if (process.env.NODE_ENV === 'production' && !process.env.ALLOW_PROD_SEED) {
+    console.error('⛔ FATAL: Demo seeding is disabled in PRODUCTION environment without ALLOW_PROD_SEED=true.');
+    process.exit(1);
+  }
+
   const health = await checkHealth();
   if (!health.connected) {
     console.error('❌ Cannot connect to PostgreSQL server:', health.message);
