@@ -10,6 +10,7 @@ const DEV_SEEDED_STORES = [
     owner_name: 'Marcus Vance',
     owner_email: 'owner.marcus@freshmart.com',
     average_rating: '4.80',
+    overall_rating: '4.80',
     rating_count: 4,
     created_at: new Date('2026-01-02T00:00:00.000Z'),
     updated_at: new Date('2026-01-02T00:00:00.000Z'),
@@ -23,6 +24,7 @@ const DEV_SEEDED_STORES = [
     owner_name: 'Elena Rostova',
     owner_email: 'owner.elena@nexuscoffee.com',
     average_rating: '4.90',
+    overall_rating: '4.90',
     rating_count: 3,
     created_at: new Date('2026-01-03T00:00:00.000Z'),
     updated_at: new Date('2026-01-03T00:00:00.000Z'),
@@ -36,6 +38,7 @@ const DEV_SEEDED_STORES = [
     owner_name: 'Marcus Vance',
     owner_email: 'owner.marcus@freshmart.com',
     average_rating: '4.50',
+    overall_rating: '4.50',
     rating_count: 3,
     created_at: new Date('2026-01-04T00:00:00.000Z'),
     updated_at: new Date('2026-01-04T00:00:00.000Z'),
@@ -55,6 +58,7 @@ class StoreRepository extends BaseRepository {
         `SELECT s.id, s.name, s.email, s.address, s.owner_id, s.created_at, s.updated_at,
                 u.name AS owner_name, u.email AS owner_email,
                 COALESCE(ROUND(AVG(r.rating_value)::numeric, 2), 0.00) AS average_rating,
+                COALESCE(ROUND(AVG(r.rating_value)::numeric, 2), 0.00) AS overall_rating,
                 COUNT(r.id)::int AS rating_count
          FROM stores s
          LEFT JOIN users u ON s.owner_id = u.id
@@ -76,6 +80,7 @@ class StoreRepository extends BaseRepository {
       const res = await this.query(
         `SELECT s.id, s.name, s.email, s.address, s.owner_id, s.created_at, s.updated_at,
                 COALESCE(ROUND(AVG(r.rating_value)::numeric, 2), 0.00) AS average_rating,
+                COALESCE(ROUND(AVG(r.rating_value)::numeric, 2), 0.00) AS overall_rating,
                 COUNT(r.id)::int AS rating_count
          FROM stores s
          LEFT JOIN ratings r ON s.id = r.store_id
@@ -90,23 +95,33 @@ class StoreRepository extends BaseRepository {
     }
   }
 
-  async create({ name, email, address, ownerId }) {
+  async create({ name, email, address, ownerId, owner_name = null, owner_email = null }) {
     try {
       const res = await this.query(
         `INSERT INTO stores (name, email, address, owner_id)
          VALUES ($1, $2, $3, $4)
          RETURNING id, name, email, address, owner_id, created_at, updated_at`,
-        [name, email.toLowerCase().trim(), address, ownerId || null]
+        [name.trim(), email.toLowerCase().trim(), address.trim(), ownerId || null]
       );
-      return res.rows[0];
+      return {
+        ...res.rows[0],
+        owner_name,
+        owner_email,
+        average_rating: '0.00',
+        overall_rating: '0.00',
+        rating_count: 0,
+      };
     } catch (err) {
       const newStore = {
         id: this.inMemoryStores.length + 1,
-        name,
+        name: name.trim(),
         email: email.toLowerCase().trim(),
-        address,
+        address: address.trim(),
         owner_id: ownerId || null,
+        owner_name: owner_name || null,
+        owner_email: owner_email || null,
         average_rating: '0.00',
+        overall_rating: '0.00',
         rating_count: 0,
         created_at: new Date(),
         updated_at: new Date(),
@@ -128,16 +143,16 @@ class StoreRepository extends BaseRepository {
              updated_at = NOW()
          WHERE id = $5
          RETURNING id, name, email, address, owner_id, updated_at`,
-        [name, email, address, ownerId, storeId]
+        [name ? name.trim() : null, email ? email.trim() : null, address ? address.trim() : null, ownerId, storeId]
       );
       return res.rows[0] || null;
     } catch (err) {
       const store = this.inMemoryStores.find((s) => s.id === storeId);
       if (store) {
-        if (name) store.name = name;
-        if (email) store.email = email;
-        if (address) store.address = address;
-        if (ownerId) store.owner_id = ownerId;
+        if (name) store.name = name.trim();
+        if (email) store.email = email.trim();
+        if (address) store.address = address.trim();
+        if (ownerId !== undefined) store.owner_id = ownerId;
         store.updated_at = new Date();
         return store;
       }
@@ -145,40 +160,79 @@ class StoreRepository extends BaseRepository {
     }
   }
 
-  async findPaginated({ search = '', ownerId = null, sortBy = 'created_at', sortOrder = 'DESC', limit = 10, offset = 0 }) {
+  /**
+   * List stores with dynamic overall rating calculations, multi-field filtering, and sorting
+   */
+  async findPaginated({
+    search = '',
+    ownerId = null,
+    name = '',
+    email = '',
+    address = '',
+    sortBy = 'created_at',
+    sortOrder = 'DESC',
+    limit = 10,
+    offset = 0,
+  }) {
     try {
-      let whereClause = 'WHERE 1=1';
+      let whereClauses = ['1=1'];
       const params = [];
 
       if (ownerId) {
         params.push(ownerId);
-        whereClause += ` AND s.owner_id = $${params.length}`;
+        whereClauses.push(`s.owner_id = $${params.length}`);
+      }
+
+      if (name) {
+        params.push(`%${name.trim()}%`);
+        whereClauses.push(`s.name ILIKE $${params.length}`);
+      }
+
+      if (email) {
+        params.push(`%${email.trim()}%`);
+        whereClauses.push(`s.email ILIKE $${params.length}`);
+      }
+
+      if (address) {
+        params.push(`%${address.trim()}%`);
+        whereClauses.push(`s.address ILIKE $${params.length}`);
       }
 
       if (search) {
-        params.push(`%${search}%`);
-        whereClause += ` AND (s.name ILIKE $${params.length} OR s.address ILIKE $${params.length})`;
+        params.push(`%${search.trim()}%`);
+        const pIdx = params.length;
+        whereClauses.push(`(s.name ILIKE $${pIdx} OR s.email ILIKE $${pIdx} OR s.address ILIKE $${pIdx})`);
       }
 
-      const countSql = `SELECT COUNT(*) AS total FROM stores s ${whereClause}`;
+      const whereSql = `WHERE ${whereClauses.join(' AND ')}`;
+
+      const countSql = `SELECT COUNT(*) AS total FROM stores s ${whereSql}`;
       const countRes = await this.query(countSql, params);
       const total = parseInt(countRes.rows[0].total, 10);
 
-      const safeSortBy = ['name', 'created_at', 'average_rating'].includes(sortBy) ? sortBy : 'created_at';
+      const safeSortBy = ['name', 'email', 'address', 'rating', 'average_rating', 'created_at'].includes(sortBy)
+        ? sortBy
+        : 'created_at';
       const safeSortOrder = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
+      const sortExpression =
+        safeSortBy === 'rating' || safeSortBy === 'average_rating'
+          ? 'average_rating'
+          : `s.${safeSortBy}`;
 
       const pIndex = params.length + 1;
       const selectSql = `
-        SELECT s.id, s.name, s.email, s.address, s.owner_id, s.created_at,
-               u.name AS owner_name,
+        SELECT s.id, s.name, s.email, s.address, s.owner_id, s.created_at, s.updated_at,
+               u.name AS owner_name, u.email AS owner_email,
                COALESCE(ROUND(AVG(r.rating_value)::numeric, 2), 0.00) AS average_rating,
+               COALESCE(ROUND(AVG(r.rating_value)::numeric, 2), 0.00) AS overall_rating,
                COUNT(r.id)::int AS rating_count
         FROM stores s
         LEFT JOIN users u ON s.owner_id = u.id
         LEFT JOIN ratings r ON s.id = r.store_id
-        ${whereClause}
-        GROUP BY s.id, u.name
-        ORDER BY ${safeSortBy === 'average_rating' ? 'average_rating' : `s.${safeSortBy}`} ${safeSortOrder}
+        ${whereSql}
+        GROUP BY s.id, u.name, u.email
+        ORDER BY ${sortExpression} ${safeSortOrder}
         LIMIT $${pIndex} OFFSET $${pIndex + 1}
       `;
 
@@ -186,11 +240,52 @@ class StoreRepository extends BaseRepository {
       return { items: dataRes.rows, total };
     } catch (err) {
       let filtered = [...this.inMemoryStores];
-      if (ownerId) filtered = filtered.filter((s) => s.owner_id === parseInt(ownerId, 10));
-      if (search) {
-        const s = search.toLowerCase();
-        filtered = filtered.filter((st) => st.name.toLowerCase().includes(s) || st.address.toLowerCase().includes(s));
+
+      if (ownerId) {
+        filtered = filtered.filter((s) => s.owner_id === parseInt(ownerId, 10));
       }
+      if (name) {
+        filtered = filtered.filter((s) => s.name.toLowerCase().includes(name.trim().toLowerCase()));
+      }
+      if (email) {
+        filtered = filtered.filter((s) => s.email.toLowerCase().includes(email.trim().toLowerCase()));
+      }
+      if (address) {
+        filtered = filtered.filter((s) => s.address.toLowerCase().includes(address.trim().toLowerCase()));
+      }
+      if (search) {
+        const s = search.trim().toLowerCase();
+        filtered = filtered.filter(
+          (st) =>
+            st.name.toLowerCase().includes(s) ||
+            st.email.toLowerCase().includes(s) ||
+            st.address.toLowerCase().includes(s)
+        );
+      }
+
+      const safeSortBy = ['name', 'email', 'address', 'rating', 'average_rating', 'created_at'].includes(sortBy)
+        ? sortBy
+        : 'created_at';
+      const isAsc = sortOrder.toUpperCase() === 'ASC';
+
+      filtered.sort((a, b) => {
+        let valA = a[safeSortBy] || '';
+        let valB = b[safeSortBy] || '';
+        if (safeSortBy === 'rating' || safeSortBy === 'average_rating') {
+          valA = parseFloat(a.average_rating || 0);
+          valB = parseFloat(b.average_rating || 0);
+        } else if (safeSortBy === 'created_at') {
+          valA = new Date(valA).getTime();
+          valB = new Date(valB).getTime();
+        } else {
+          valA = valA.toString().toLowerCase();
+          valB = valB.toString().toLowerCase();
+        }
+        if (valA < valB) return isAsc ? -1 : 1;
+        if (valA > valB) return isAsc ? 1 : -1;
+        return 0;
+      });
+
       const items = filtered.slice(offset, offset + limit);
       return { items, total: filtered.length };
     }

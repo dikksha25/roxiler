@@ -13,29 +13,32 @@ const { ROLES } = require('../../constants/roles.constant');
 
 const router = express.Router();
 
-// Public: List stores with search, pagination, and sorting
-router.get('/', validate(listStoresValidator), storeController.listStores);
+// Public store directory & store detail
+router.get('/', validate(listStoresValidator), storeController.getStores);
 
-// Store Owner only: View own stores
-router.get('/my-stores', authenticate, authorize(ROLES.STORE_OWNER), storeController.getMyStores);
+// Store Owner specific endpoint
+router.get(
+  '/my-stores',
+  authenticate,
+  authorize(ROLES.STORE_OWNER),
+  storeController.getMyStores
+);
 
-// Public: Get store details by ID
 router.get('/:id', validate(getStoreByIdValidator), storeController.getStoreById);
 
-// Admin & Store Owner: Create store
+// System Administrator store creation & management
 router.post(
   '/',
   authenticate,
-  authorize(ROLES.SYSTEM_ADMIN, ROLES.STORE_OWNER),
+  authorize(ROLES.SYSTEM_ADMIN),
   validate(createStoreValidator),
   storeController.createStore
 );
 
-// Admin & Store Owner: Update store
 router.patch(
   '/:id',
   authenticate,
-  authorize(ROLES.SYSTEM_ADMIN, ROLES.STORE_OWNER),
+  authorize(ROLES.SYSTEM_ADMIN),
   validate(updateStoreValidator),
   storeController.updateStore
 );
