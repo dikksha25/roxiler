@@ -4,6 +4,7 @@ import { Card } from '../common/Card';
 import { Alert } from '../common/Alert';
 import { Spinner } from '../common/Spinner';
 import { UserManagementPage } from './UserManagementPage';
+import { StoreManagementPage } from './StoreManagementPage';
 
 export const AdminDashboard = ({ onNavigate }) => {
   const [activeTab, setActiveTab] = useState('overview'); // overview, users, stores, ratings
@@ -54,7 +55,7 @@ export const AdminDashboard = ({ onNavigate }) => {
     );
   }
 
-  const { stats = {}, roleBreakdown = {}, recentStores = [], recentRatings = [] } = data || {};
+  const { stats = {}, roleBreakdown = {}, recentRatings = [] } = data || {};
 
   return (
     <div className="fade-in">
@@ -280,54 +281,11 @@ export const AdminDashboard = ({ onNavigate }) => {
         </div>
       )}
 
-      {/* TAB 2: USER MANAGEMENT (Full Featured) */}
+      {/* TAB 2: USER MANAGEMENT */}
       {activeTab === 'users' && <UserManagementPage />}
 
-      {/* TAB 3: STORES */}
-      {activeTab === 'stores' && (
-        <Card>
-          <h3 style={{ margin: '0 0 1.25rem 0', fontSize: '1.2rem' }}>Registered Stores & Assigned Owners</h3>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}>
-                  <th style={{ padding: '0.75rem 1rem' }}>ID</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Store Name</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Contact Email</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Assigned Owner</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Avg Rating</th>
-                  <th style={{ padding: '0.75rem 1rem' }}>Address</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentStores.map((st) => (
-                  <tr key={st.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
-                    <td style={{ padding: '0.75rem 1rem', color: 'var(--text-dim)' }}>#{st.id}</td>
-                    <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: 'var(--accent-primary)' }}>{st.name}</td>
-                    <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>{st.email}</td>
-                    <td style={{ padding: '0.75rem 1rem' }}>
-                      <span style={{ color: 'var(--accent-success)', fontWeight: 600 }}>
-                        {st.owner_name || `Owner ID #${st.owner_id}`}
-                      </span>
-                    </td>
-                    <td style={{ padding: '0.75rem 1rem' }}>
-                      <span style={{ color: '#f59e0b', fontWeight: 700 }}>
-                        {st.average_rating || '0.00'} ★
-                      </span>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginLeft: '0.35rem' }}>
-                        ({st.rating_count || 0})
-                      </span>
-                    </td>
-                    <td style={{ padding: '0.75rem 1rem', color: 'var(--text-dim)', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {st.address}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      )}
+      {/* TAB 3: STORE MANAGEMENT */}
+      {activeTab === 'stores' && <StoreManagementPage />}
 
       {/* TAB 4: RATINGS */}
       {activeTab === 'ratings' && (
