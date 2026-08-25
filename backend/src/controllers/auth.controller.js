@@ -19,6 +19,11 @@ const getCurrentUser = asyncHandler(async (req, res) => {
   return ApiResponse.success(res, 'Profile retrieved', user);
 });
 
+const logout = asyncHandler(async (req, res) => {
+  const result = await authService.logout(req.user?.id);
+  return ApiResponse.success(res, MESSAGES.LOGOUT_SUCCESS, result);
+});
+
 const updatePassword = asyncHandler(async (req, res) => {
   const { currentPassword, newPassword } = req.body;
   const result = await authService.updatePassword(req.user.id, { currentPassword, newPassword });
@@ -29,5 +34,6 @@ module.exports = {
   register,
   login,
   getCurrentUser,
+  logout,
   updatePassword,
 };
