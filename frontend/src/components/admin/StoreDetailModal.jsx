@@ -8,86 +8,72 @@ export const StoreDetailModal = ({ isOpen, onClose, store }) => {
   const avg = parseFloat(store.overall_rating || store.average_rating || 0);
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="🏪 Commercial Store Details" maxWidth="500px">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    <Modal isOpen={isOpen} onClose={onClose} title="🏪 Commercial Store Profile" maxWidth="540px">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         <div
           style={{
-            background: 'rgba(255, 255, 255, 0.02)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-md)',
-            padding: '1.25rem',
+            background: '#EFEBF5',
+            boxShadow: 'var(--shadow-clay-pressed)',
+            borderRadius: 'var(--radius-clay-inner)',
+            padding: '1.5rem',
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>Store ID #{store.id}</span>
-            <div
-              style={{
-                background: 'rgba(245, 158, 11, 0.15)',
-                color: '#fbbf24',
-                border: '1px solid rgba(245, 158, 11, 0.3)',
-                padding: '0.2rem 0.6rem',
-                borderRadius: 'var(--radius-full)',
-                fontWeight: 700,
-                fontSize: '0.85rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.25rem',
-              }}
-            >
-              <span>★</span>
-              <span>{avg.toFixed(2)} / 5.0</span>
-            </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
+            <span style={{ fontSize: '0.85rem', color: 'var(--clay-text-dim)', fontWeight: 700 }}>Store ID #{store.id}</span>
+            <span className="clay-badge clay-badge-amber">
+              ★ {avg.toFixed(2)} / 5.0
+            </span>
           </div>
 
-          <h3 style={{ fontSize: '1.35rem', margin: '0 0 0.25rem 0', color: 'var(--accent-primary)' }}>
+          <h3 style={{ fontSize: '1.45rem', margin: '0 0 0.25rem 0', color: 'var(--clay-text-primary)', fontWeight: 900 }}>
             {store.name}
           </h3>
-          <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '1.25rem' }}>
+          <span style={{ fontSize: '0.95rem', color: 'var(--clay-accent-primary)', display: 'block', marginBottom: '1.25rem', fontWeight: 600 }}>
             {store.email}
           </span>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.875rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', fontSize: '0.92rem' }}>
             <div>
-              <span style={{ color: 'var(--text-dim)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 600 }}>
+              <span style={{ color: 'var(--clay-text-dim)', display: 'block', fontSize: '0.78rem', textTransform: 'uppercase', fontWeight: 800 }}>
                 Physical Location
               </span>
-              <span style={{ color: 'var(--text-primary)' }}>{store.address}</span>
+              <span style={{ color: 'var(--clay-text-primary)', fontWeight: 600 }}>{store.address}</span>
             </div>
 
             <div>
-              <span style={{ color: 'var(--text-dim)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 600 }}>
+              <span style={{ color: 'var(--clay-text-dim)', display: 'block', fontSize: '0.78rem', textTransform: 'uppercase', fontWeight: 800 }}>
                 Assigned Store Owner
               </span>
-              <span style={{ color: 'var(--accent-success)', fontWeight: 600 }}>
+              <span style={{ color: 'var(--clay-success)', fontWeight: 700 }}>
                 👤 {store.owner_name || `Owner ID #${store.owner_id || 'None'}`}
                 {store.owner_email && ` (${store.owner_email})`}
               </span>
             </div>
 
             <div>
-              <span style={{ color: 'var(--text-dim)', display: 'block', fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 600 }}>
-                Customer Ratings & Feedback
+              <span style={{ color: 'var(--clay-text-dim)', display: 'block', fontSize: '0.78rem', textTransform: 'uppercase', fontWeight: 800 }}>
+                Customer Ratings &amp; Feedback
               </span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
-                <span style={{ color: '#f59e0b', fontSize: '1.1rem' }}>
+                <span style={{ color: 'var(--clay-warning)', fontSize: '1.2rem' }}>
                   {'★'.repeat(Math.round(avg))}{'☆'.repeat(5 - Math.round(avg))}
                 </span>
-                <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                <span style={{ color: 'var(--clay-text-muted)', fontSize: '0.88rem', fontWeight: 600 }}>
                   ({store.rating_count || 0} reviews computed dynamically)
                 </span>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border-subtle)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '0.5rem', paddingTop: '0.75rem', borderTop: '2px solid rgba(124, 58, 237, 0.08)' }}>
               <div>
-                <span style={{ color: 'var(--text-dim)', fontSize: '0.75rem' }}>Registered Date</span>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                <span style={{ color: 'var(--clay-text-dim)', fontSize: '0.8rem', fontWeight: 600 }}>Registered Date</span>
+                <div style={{ fontSize: '0.85rem', color: 'var(--clay-text-primary)', fontWeight: 700 }}>
                   {store.created_at ? new Date(store.created_at).toLocaleDateString() : 'N/A'}
                 </div>
               </div>
               <div>
-                <span style={{ color: 'var(--text-dim)', fontSize: '0.75rem' }}>Directory Status</span>
-                <div style={{ fontSize: '0.8rem', color: 'var(--accent-success)', fontWeight: 600 }}>
+                <span style={{ color: 'var(--clay-text-dim)', fontSize: '0.8rem', fontWeight: 600 }}>Directory Status</span>
+                <div style={{ fontSize: '0.85rem', color: 'var(--clay-success)', fontWeight: 700 }}>
                   ✓ Verified Commercial Store
                 </div>
               </div>

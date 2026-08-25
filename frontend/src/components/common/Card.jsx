@@ -3,13 +3,18 @@ import React from 'react';
 export const Card = ({
   children,
   className = '',
-  interactive = false,
+  hero = false,
+  solid = false,
   style = {},
   ...props
 }) => {
+  let cardClass = 'clay-card';
+  if (hero) cardClass += ' clay-card-hero';
+  if (solid) cardClass += ' clay-card-solid';
+
   return (
     <div
-      className={`glass-card ${interactive ? 'interactive' : ''} ${className}`}
+      className={`${cardClass} ${className}`}
       style={style}
       {...props}
     >

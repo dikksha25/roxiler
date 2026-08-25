@@ -6,48 +6,51 @@ import { Button } from '../components/common/Button';
 export const StoresPage = ({ onNavigate }) => {
   const { isAuthenticated } = useAuth();
 
-  // If authenticated (NORMAL_USER, STORE_OWNER, SYSTEM_ADMIN), render full store browsing & rating interface
+  // If authenticated, render full store browsing & rating interface
   if (isAuthenticated) {
     return <UserStoreBrowsePage />;
   }
 
   // Guest view with sign-in prompt
   return (
-    <div className="fade-in">
-      <div
-        style={{
-          background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.15) 100%)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '2rem',
-          marginBottom: '2rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '1rem',
-        }}
-      >
-        <div>
-          <h1 style={{ fontSize: '1.85rem', margin: 0, letterSpacing: '-0.02em' }}>
-            🏪 Commercial Stores Directory
-          </h1>
-          <p style={{ color: 'var(--text-muted)', margin: '0.5rem 0 0 0', fontSize: '0.95rem' }}>
-            Sign in to rate stores, submit reviews, and manage your ratings.
-          </p>
+    <div className="clay-page">
+      <div className="clay-container">
+        <div
+          className="clay-card clay-card-hero"
+          style={{
+            marginBottom: '2.5rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '1.5rem',
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(244, 241, 250, 0.8) 100%)',
+          }}
+        >
+          <div>
+            <span className="clay-badge clay-badge-purple" style={{ marginBottom: '0.75rem' }}>
+              COMMERCIAL DIRECTORY
+            </span>
+            <h1 style={{ fontSize: 'clamp(2rem, 4.5vw, 2.75rem)', margin: 0, fontWeight: 900 }}>
+              🏪 Browse Stores &amp; Ratings
+            </h1>
+            <p style={{ color: 'var(--clay-text-muted)', margin: '0.65rem 0 0 0', fontSize: '1.05rem', maxWidth: '600px' }}>
+              Explore rated community businesses. Sign in to submit verified star feedback and track your personal scores.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.85rem', flexWrap: 'wrap' }}>
+            <Button variant="secondary" onClick={() => onNavigate('login')}>
+              Sign In to Rate
+            </Button>
+            <Button variant="primary" onClick={() => onNavigate('register')}>
+              Register as User
+            </Button>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <Button variant="secondary" onClick={() => onNavigate('login')}>
-            Sign In to Rate
-          </Button>
-          <Button variant="primary" onClick={() => onNavigate('register')}>
-            Register as User
-          </Button>
-        </div>
+        <UserStoreBrowsePage />
       </div>
-
-      <UserStoreBrowsePage />
     </div>
   );
 };

@@ -36,7 +36,6 @@ export const AddUserModal = ({ isOpen, onClose, onUserCreated }) => {
     setError(null);
     setFieldErrors({});
 
-    // Client-side validation checks
     const errors = {};
     if (!isNameLenValid) {
       errors.name = 'Name must be between 20 and 60 characters';
@@ -133,17 +132,17 @@ export const AddUserModal = ({ isOpen, onClose, onUserCreated }) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="➕ Add New Platform User" maxWidth="540px">
+    <Modal isOpen={isOpen} onClose={handleClose} title="➕ Add New User" maxWidth="560px">
       {error && <Alert type="error" message={error} onClose={() => setError(null)} />}
 
       <form onSubmit={handleSubmit}>
         {/* Role Selector */}
-        <div style={{ marginBottom: '1.25rem' }}>
-          <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem' }}>
-            Account Role <span style={{ color: 'var(--accent-danger)' }}>*</span>
+        <div className="clay-form-group" style={{ marginBottom: '1.25rem' }}>
+          <label className="clay-label" style={{ display: 'block', marginBottom: '0.4rem' }}>
+            Account Role <span style={{ color: 'var(--clay-danger)' }}>*</span>
           </label>
           <select
-            className="input-field"
+            className="clay-select"
             value={formData.role}
             onChange={(e) => handleChange('role', e.target.value)}
             style={{ width: '100%' }}
@@ -154,13 +153,13 @@ export const AddUserModal = ({ isOpen, onClose, onUserCreated }) => {
           </select>
         </div>
 
-        {/* Name with character counter */}
+        {/* Name */}
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-              Full Name <span style={{ color: 'var(--accent-danger)' }}>*</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+            <label className="clay-label">
+              Full Name <span style={{ color: 'var(--clay-danger)' }}>*</span>
             </label>
-            <span style={{ fontSize: '0.75rem', color: isNameLenValid ? 'var(--accent-success)' : 'var(--text-dim)' }}>
+            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: isNameLenValid ? 'var(--clay-success)' : 'var(--clay-text-dim)' }}>
               {formData.name.length}/60 chars (min 20)
             </span>
           </div>
@@ -202,81 +201,79 @@ export const AddUserModal = ({ isOpen, onClose, onUserCreated }) => {
 
           <div
             style={{
-              background: 'rgba(255, 255, 255, 0.03)',
-              padding: '0.5rem 0.75rem',
-              borderRadius: 'var(--radius-sm)',
-              marginBottom: '1rem',
-              fontSize: '0.75rem',
+              background: '#EFEBF5',
+              boxShadow: 'var(--shadow-clay-pressed)',
+              borderRadius: 'var(--radius-clay-inner)',
+              padding: '0.85rem 1.15rem',
+              marginBottom: '1.25rem',
+              fontSize: '0.82rem',
               display: 'grid',
               gridTemplateColumns: '1fr 1fr',
-              gap: '0.35rem',
+              gap: '0.45rem',
             }}
           >
-            <span style={{ color: isLenValid ? 'var(--accent-success)' : 'var(--text-dim)' }}>
+            <span style={{ color: isLenValid ? 'var(--clay-success)' : 'var(--clay-text-dim)', fontWeight: 700 }}>
               {isLenValid ? '✓' : '○'} 8–16 characters
             </span>
-            <span style={{ color: hasUppercase ? 'var(--accent-success)' : 'var(--text-dim)' }}>
+            <span style={{ color: hasUppercase ? 'var(--clay-success)' : 'var(--clay-text-dim)', fontWeight: 700 }}>
               {hasUppercase ? '✓' : '○'} 1 Uppercase letter
             </span>
-            <span style={{ color: hasSpecial ? 'var(--accent-success)' : 'var(--text-dim)' }}>
+            <span style={{ color: hasSpecial ? 'var(--clay-success)' : 'var(--clay-text-dim)', fontWeight: 700 }}>
               {hasSpecial ? '✓' : '○'} 1 Special character
             </span>
-            <span style={{ color: 'var(--text-dim)' }}>
+            <span style={{ color: 'var(--clay-text-dim)', fontWeight: 600 }}>
               🔒 Bcrypt Hashed
             </span>
           </div>
         </div>
 
         {/* Address */}
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-              Address (Optional)
+        <div className="clay-form-group">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+            <label className="clay-label">
+              Physical Address (Optional)
             </label>
-            <span style={{ fontSize: '0.75rem', color: formData.address.length > 400 ? 'var(--accent-danger)' : 'var(--text-dim)' }}>
+            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: formData.address.length > 400 ? 'var(--clay-danger)' : 'var(--clay-text-dim)' }}>
               {formData.address.length}/400 chars
             </span>
           </div>
           <textarea
-            className="input-field"
+            className="clay-textarea"
             placeholder="Physical address (max 400 characters)"
             rows={2}
             value={formData.address}
             onChange={(e) => handleChange('address', e.target.value)}
-            style={{ width: '100%', resize: 'vertical', marginBottom: '1.25rem' }}
+            style={{ resize: 'vertical' }}
           />
         </div>
 
         {/* Action Buttons */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
-          <div style={{ display: 'flex', gap: '0.35rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
             <button
               type="button"
               onClick={() => autofillSample(ROLES.NORMAL_USER)}
-              className="btn btn-secondary"
-              style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+              className="clay-btn clay-btn-secondary clay-btn-sm"
             >
               Autofill User
             </button>
             <button
               type="button"
               onClick={() => autofillSample(ROLES.STORE_OWNER)}
-              className="btn btn-secondary"
-              style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+              className="clay-btn clay-btn-secondary clay-btn-sm"
             >
               Autofill Owner
             </button>
             <button
               type="button"
               onClick={() => autofillSample(ROLES.SYSTEM_ADMIN)}
-              className="btn btn-secondary"
-              style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+              className="clay-btn clay-btn-secondary clay-btn-sm"
             >
               Autofill Admin
             </button>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', gap: '0.65rem' }}>
             <Button variant="secondary" type="button" onClick={handleClose}>
               Cancel
             </Button>

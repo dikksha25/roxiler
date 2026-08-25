@@ -37,31 +37,37 @@ export const Pagination = ({
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: '1rem 1.25rem',
-        borderTop: '1px solid var(--border-subtle)',
-        fontSize: '0.85rem',
-        color: 'var(--text-muted)',
+        padding: '1.25rem 1.75rem',
+        fontSize: '0.95rem',
+        color: 'var(--clay-text-muted)',
         flexWrap: 'wrap',
-        gap: '0.75rem',
-        background: 'rgba(255, 255, 255, 0.01)',
+        gap: '1rem',
+        borderTop: '2px solid rgba(124, 58, 237, 0.08)',
+        background: 'rgba(255, 255, 255, 0.4)',
       }}
     >
       {/* Total Count & Page Size */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
         <span>
-          Showing <strong>{Math.min(totalItems, (currentPage - 1) * pageSize + 1)}</strong> to{' '}
-          <strong>{Math.min(totalItems, currentPage * pageSize)}</strong> of{' '}
-          <strong>{totalItems}</strong> records
+          Showing <strong style={{ color: 'var(--clay-text-primary)' }}>{Math.min(totalItems, (currentPage - 1) * pageSize + 1)}</strong> to{' '}
+          <strong style={{ color: 'var(--clay-text-primary)' }}>{Math.min(totalItems, currentPage * pageSize)}</strong> of{' '}
+          <strong style={{ color: 'var(--clay-text-primary)' }}>{totalItems}</strong> entries
         </span>
 
         {onPageSizeChange && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Per page:</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ fontSize: '0.85rem', color: 'var(--clay-text-dim)', fontWeight: 600 }}>Per page:</span>
             <select
-              className="input-field"
+              className="clay-select"
               value={pageSize}
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
-              style={{ padding: '0.2rem 0.5rem', fontSize: '0.8rem', height: 'auto' }}
+              style={{
+                padding: '0.35rem 0.85rem',
+                minHeight: '38px',
+                fontSize: '0.88rem',
+                width: 'auto',
+                borderRadius: '14px',
+              }}
             >
               {pageSizeOptions.map((opt) => (
                 <option key={opt} value={opt}>
@@ -74,13 +80,13 @@ export const Pagination = ({
       </div>
 
       {/* Page Navigation Controls */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <button
           type="button"
-          className="btn btn-secondary"
+          className="clay-btn clay-btn-secondary clay-btn-sm"
           disabled={isFirst}
           onClick={() => onPageChange(1)}
-          style={{ fontSize: '0.75rem', padding: '0.3rem 0.5rem' }}
+          style={{ minHeight: '38px', padding: '0.35rem 0.75rem', borderRadius: '14px' }}
           title="First Page"
         >
           &laquo;
@@ -88,10 +94,10 @@ export const Pagination = ({
 
         <button
           type="button"
-          className="btn btn-secondary"
+          className="clay-btn clay-btn-secondary clay-btn-sm"
           disabled={isFirst}
           onClick={() => onPageChange(currentPage - 1)}
-          style={{ fontSize: '0.75rem', padding: '0.3rem 0.6rem' }}
+          style={{ minHeight: '38px', padding: '0.35rem 0.85rem', borderRadius: '14px' }}
         >
           &larr; Prev
         </button>
@@ -100,13 +106,14 @@ export const Pagination = ({
           <button
             key={p}
             type="button"
-            className={`btn ${p === currentPage ? 'btn-primary' : 'btn-secondary'}`}
+            className={`clay-btn ${p === currentPage ? 'clay-btn-primary' : 'clay-btn-secondary'} clay-btn-sm`}
             onClick={() => onPageChange(p)}
             style={{
-              fontSize: '0.75rem',
-              padding: '0.3rem 0.6rem',
-              minWidth: '32px',
-              fontWeight: p === currentPage ? 700 : 400,
+              minHeight: '38px',
+              minWidth: '38px',
+              padding: '0.35rem',
+              borderRadius: '14px',
+              fontWeight: p === currentPage ? 900 : 700,
             }}
           >
             {p}
@@ -115,20 +122,20 @@ export const Pagination = ({
 
         <button
           type="button"
-          className="btn btn-secondary"
+          className="clay-btn clay-btn-secondary clay-btn-sm"
           disabled={isLast}
           onClick={() => onPageChange(currentPage + 1)}
-          style={{ fontSize: '0.75rem', padding: '0.3rem 0.6rem' }}
+          style={{ minHeight: '38px', padding: '0.35rem 0.85rem', borderRadius: '14px' }}
         >
           Next &rarr;
         </button>
 
         <button
           type="button"
-          className="btn btn-secondary"
+          className="clay-btn clay-btn-secondary clay-btn-sm"
           disabled={isLast}
           onClick={() => onPageChange(totalPages)}
-          style={{ fontSize: '0.75rem', padding: '0.3rem 0.5rem' }}
+          style={{ minHeight: '38px', padding: '0.35rem 0.75rem', borderRadius: '14px' }}
           title="Last Page"
         >
           &raquo;

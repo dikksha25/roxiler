@@ -1,6 +1,6 @@
 import React from 'react';
 
-export const Spinner = ({ size = 24, color = 'var(--accent-primary)', style = {} }) => {
+export const Spinner = ({ size = 28, color = 'var(--clay-accent-primary)', style = {} }) => {
   return (
     <div
       style={{
@@ -15,14 +15,14 @@ export const Spinner = ({ size = 24, color = 'var(--accent-primary)', style = {}
         height={size}
         viewBox="0 0 24 24"
         style={{
-          animation: 'spin 0.8s linear infinite',
+          animation: 'clay-spin 0.8s linear infinite',
         }}
       >
         <circle
           cx="12"
           cy="12"
           r="10"
-          stroke="rgba(255, 255, 255, 0.2)"
+          stroke="rgba(124, 58, 237, 0.15)"
           strokeWidth="3"
           fill="none"
         />
@@ -34,12 +34,6 @@ export const Spinner = ({ size = 24, color = 'var(--accent-primary)', style = {}
           fill="none"
         />
       </svg>
-      <style>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 };

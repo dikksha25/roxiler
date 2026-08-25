@@ -3,67 +3,43 @@ import React from 'react';
 export const Alert = ({ type = 'info', message, onClose, style = {} }) => {
   if (!message) return null;
 
-  const typeStyles = {
-    error: {
-      bg: 'rgba(239, 68, 68, 0.15)',
-      border: 'rgba(239, 68, 68, 0.35)',
-      color: '#f87171',
-      icon: '⚠️',
-    },
-    success: {
-      bg: 'rgba(16, 185, 129, 0.15)',
-      border: 'rgba(16, 185, 129, 0.35)',
-      color: '#34d399',
-      icon: '✅',
-    },
-    warning: {
-      bg: 'rgba(245, 158, 11, 0.15)',
-      border: 'rgba(245, 158, 11, 0.35)',
-      color: '#fbbf24',
-      icon: '⚡',
-    },
-    info: {
-      bg: 'rgba(99, 102, 241, 0.15)',
-      border: 'rgba(99, 102, 241, 0.35)',
-      color: '#818cf8',
-      icon: 'ℹ️',
-    },
-  };
+  let alertClass = 'clay-alert';
+  let icon = 'ℹ️';
 
-  const current = typeStyles[type] || typeStyles.info;
+  if (type === 'error' || type === 'danger') {
+    alertClass += ' clay-alert-danger';
+    icon = '⚠️';
+  } else if (type === 'success') {
+    alertClass += ' clay-alert-success';
+    icon = '✅';
+  } else if (type === 'warning') {
+    alertClass += ' clay-alert-warning';
+    icon = '⚡';
+  } else {
+    alertClass += ' clay-alert-info';
+    icon = 'ℹ️';
+  }
 
   return (
-    <div
-      style={{
-        background: current.bg,
-        border: `1px solid ${current.border}`,
-        color: current.color,
-        padding: '0.75rem 1rem',
-        borderRadius: 'var(--radius-md)',
-        marginBottom: '1.25rem',
-        fontSize: '0.875rem',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '0.75rem',
-        ...style,
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <span>{current.icon}</span>
-        <span>{message}</span>
+    <div className={alertClass} style={{ marginBottom: '1.25rem', ...style }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flex: 1 }}>
+        <span style={{ fontSize: '1.15rem' }}>{icon}</span>
+        <span style={{ fontWeight: 600 }}>{message}</span>
       </div>
       {onClose && (
         <button
           type="button"
           onClick={onClose}
+          aria-label="Close alert"
           style={{
             background: 'none',
             border: 'none',
             color: 'inherit',
             cursor: 'pointer',
-            fontSize: '1rem',
+            fontSize: '1.2rem',
+            lineHeight: 1,
             padding: '0 0.25rem',
+            opacity: 0.7,
           }}
         >
           &times;

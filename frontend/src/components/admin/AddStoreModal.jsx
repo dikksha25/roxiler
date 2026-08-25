@@ -24,7 +24,6 @@ export const AddStoreModal = ({ isOpen, onClose, onStoreCreated }) => {
 
   const isNameLenValid = formData.name.trim().length >= 20 && formData.name.trim().length <= 60;
 
-  // Load verified STORE_OWNER accounts from the backend
   useEffect(() => {
     if (isOpen) {
       const loadOwners = async () => {
@@ -38,7 +37,6 @@ export const AddStoreModal = ({ isOpen, onClose, onStoreCreated }) => {
             }
           }
         } catch {
-          // Fallback if network or local
           setOwners([
             { id: 2, name: 'Marcus Vance', email: 'owner.marcus@freshmart.com' },
             { id: 3, name: 'Elena Rostova', email: 'owner.elena@nexuscoffee.com' },
@@ -137,21 +135,21 @@ export const AddStoreModal = ({ isOpen, onClose, onStoreCreated }) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="🏪 Add New Commercial Store" maxWidth="540px">
+    <Modal isOpen={isOpen} onClose={handleClose} title="🏪 Add New Commercial Store" maxWidth="560px">
       {error && <Alert type="error" message={error} onClose={() => setError(null)} />}
 
       <form onSubmit={handleSubmit}>
         {/* Store Owner Selection */}
-        <div style={{ marginBottom: '1.25rem' }}>
+        <div className="clay-form-group" style={{ marginBottom: '1.25rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-              Assigned Store Owner <span style={{ color: 'var(--accent-danger)' }}>*</span>
+            <label className="clay-label">
+              Assigned Store Owner <span style={{ color: 'var(--clay-danger)' }}>*</span>
             </label>
             {loadingOwners && <Spinner size={16} />}
           </div>
 
           <select
-            className="input-field"
+            className="clay-select"
             value={formData.ownerId}
             onChange={(e) => handleChange('ownerId', e.target.value)}
             style={{ width: '100%' }}
@@ -162,18 +160,18 @@ export const AddStoreModal = ({ isOpen, onClose, onStoreCreated }) => {
               </option>
             ))}
           </select>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '0.35rem', display: 'block' }}>
+          <span style={{ fontSize: '0.8rem', color: 'var(--clay-text-dim)', marginTop: '0.35rem', display: 'block', fontWeight: 600 }}>
             Only verified users with the <strong>STORE_OWNER</strong> role can be assigned.
           </span>
         </div>
 
         {/* Store Name with Character Counter */}
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-              Store Name <span style={{ color: 'var(--accent-danger)' }}>*</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+            <label className="clay-label">
+              Store Name <span style={{ color: 'var(--clay-danger)' }}>*</span>
             </label>
-            <span style={{ fontSize: '0.75rem', color: isNameLenValid ? 'var(--accent-success)' : 'var(--text-dim)' }}>
+            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: isNameLenValid ? 'var(--clay-success)' : 'var(--clay-text-dim)' }}>
               {formData.name.length}/60 chars (min 20)
             </span>
           </div>
@@ -201,43 +199,42 @@ export const AddStoreModal = ({ isOpen, onClose, onStoreCreated }) => {
         />
 
         {/* Store Physical Address */}
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-              Physical Address <span style={{ color: 'var(--accent-danger)' }}>*</span>
+        <div className="clay-form-group">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+            <label className="clay-label">
+              Physical Address <span style={{ color: 'var(--clay-danger)' }}>*</span>
             </label>
-            <span style={{ fontSize: '0.75rem', color: formData.address.length > 400 ? 'var(--accent-danger)' : 'var(--text-dim)' }}>
+            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: formData.address.length > 400 ? 'var(--clay-danger)' : 'var(--clay-text-dim)' }}>
               {formData.address.length}/400 chars
             </span>
           </div>
           <textarea
-            className="input-field"
+            className="clay-textarea"
             placeholder="e.g. 452 Marketplace Blvd, Downtown Plaza, Metropolis"
             rows={2}
             value={formData.address}
             onChange={(e) => handleChange('address', e.target.value)}
-            style={{ width: '100%', resize: 'vertical', marginBottom: '1.25rem' }}
+            style={{ resize: 'vertical' }}
             required
           />
           {fieldErrors.address && (
-            <span style={{ color: 'var(--accent-danger)', fontSize: '0.75rem', display: 'block', marginTop: '-0.75rem', marginBottom: '1rem' }}>
+            <span style={{ color: 'var(--clay-danger)', fontSize: '0.85rem', fontWeight: 700, marginTop: '0.35rem' }}>
               {fieldErrors.address}
             </span>
           )}
         </div>
 
         {/* Action Buttons */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
           <button
             type="button"
             onClick={autofillSampleStore}
-            className="btn btn-secondary"
-            style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
+            className="clay-btn clay-btn-secondary clay-btn-sm"
           >
             ✨ Autofill Sample Store
           </button>
 
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', gap: '0.65rem' }}>
             <Button variant="secondary" type="button" onClick={handleClose}>
               Cancel
             </Button>

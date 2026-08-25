@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
+import { Alert } from '../components/common/Alert';
 import { useAuth } from '../context/AuthContext';
 
 export const RegisterPage = ({ onNavigate }) => {
@@ -18,7 +19,6 @@ export const RegisterPage = ({ onNavigate }) => {
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear field-specific error
     if (fieldErrors[field]) {
       setFieldErrors((prev) => ({ ...prev, [field]: '' }));
     }
@@ -94,179 +94,153 @@ export const RegisterPage = ({ onNavigate }) => {
   };
 
   return (
-    <div className="fade-in" style={{ maxWidth: '520px', margin: '2rem auto' }}>
-      <Card>
-        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-          <div
-            style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '12px',
-              background: 'var(--accent-gradient)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '0.75rem',
-            }}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-              <circle cx="8.5" cy="7" r="4" />
-              <line x1="20" y1="8" x2="20" y2="14" />
-              <line x1="23" y1="11" x2="17" y2="11" />
-            </svg>
-          </div>
-          <h2 style={{ fontSize: '1.75rem', marginBottom: '0.25rem' }}>Create Account</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-            Register as a <strong>Normal User</strong> to rate and review stores
-          </p>
-        </div>
-
-        {error && (
-          <div
-            style={{
-              background: 'rgba(239, 68, 68, 0.15)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              color: '#f87171',
-              padding: '0.75rem 1rem',
-              borderRadius: 'var(--radius-md)',
-              marginBottom: '1.25rem',
-              fontSize: '0.85rem',
-            }}
-          >
-            ⚠️ {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                Full Name <span style={{ color: 'var(--accent-danger)' }}>*</span>
-              </label>
-              <span style={{ fontSize: '0.75rem', color: isNameLenValid ? 'var(--accent-success)' : 'var(--text-dim)' }}>
-                {formData.name.length}/60 chars (min 20)
-              </span>
+    <div className="clay-page">
+      <div className="clay-container" style={{ maxWidth: '560px' }}>
+        <Card>
+          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+            <div className="clay-orb clay-orb-pink" style={{ margin: '0 auto 1.25rem', width: '60px', height: '60px', fontSize: '1.6rem' }}>
+              📝
             </div>
-            <Input
-              id="register-name"
-              type="text"
-              placeholder="e.g. Christopher Robin Sterling"
-              value={formData.name}
-              onChange={(e) => handleChange('name', e.target.value)}
-              error={fieldErrors.name}
-              required
-            />
+            <h2 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '0.35rem' }}>
+              Create Account
+            </h2>
+            <p style={{ color: 'var(--clay-text-muted)', fontSize: '0.95rem' }}>
+              Register as a <strong>Normal User</strong> to rate and review local stores
+            </p>
           </div>
 
-          <Input
-            label="Email Address"
-            id="register-email"
-            type="email"
-            placeholder="e.g. chris.sterling@example.com"
-            value={formData.email}
-            onChange={(e) => handleChange('email', e.target.value)}
-            error={fieldErrors.email}
-            required
-          />
+          {error && <Alert type="error" message={error} onClose={() => setError('')} />}
 
-          <div>
+          <form onSubmit={handleSubmit}>
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                <label className="clay-label" htmlFor="register-name">
+                  Full Name <span style={{ color: 'var(--clay-danger)' }}>*</span>
+                </label>
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: isNameLenValid ? 'var(--clay-success)' : 'var(--clay-text-dim)' }}>
+                  {formData.name.length}/60 chars (min 20)
+                </span>
+              </div>
+              <Input
+                id="register-name"
+                type="text"
+                placeholder="e.g. Christopher Robin Sterling"
+                value={formData.name}
+                onChange={(e) => handleChange('name', e.target.value)}
+                error={fieldErrors.name}
+                required
+              />
+            </div>
+
             <Input
-              label="Password"
-              id="register-password"
-              type="password"
-              placeholder="8 to 16 characters"
-              value={formData.password}
-              onChange={(e) => handleChange('password', e.target.value)}
-              error={fieldErrors.password}
+              label="Email Address"
+              id="register-email"
+              type="email"
+              placeholder="e.g. chris.sterling@example.com"
+              value={formData.email}
+              onChange={(e) => handleChange('email', e.target.value)}
+              error={fieldErrors.email}
               required
             />
 
-            {/* Live Password Criteria Indicators */}
-            <div
-              style={{
-                background: 'rgba(255, 255, 255, 0.03)',
-                padding: '0.65rem 0.85rem',
-                borderRadius: 'var(--radius-sm)',
-                marginBottom: '1rem',
-                fontSize: '0.75rem',
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '0.4rem',
-              }}
+            <div>
+              <Input
+                label="Password"
+                id="register-password"
+                type="password"
+                placeholder="8 to 16 characters"
+                value={formData.password}
+                onChange={(e) => handleChange('password', e.target.value)}
+                error={fieldErrors.password}
+                required
+              />
+
+              {/* Live Password Criteria Indicators */}
+              <div
+                style={{
+                  background: '#EFEBF5',
+                  boxShadow: 'var(--shadow-clay-pressed)',
+                  borderRadius: 'var(--radius-clay-inner)',
+                  padding: '1rem 1.25rem',
+                  marginBottom: '1.25rem',
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '0.5rem',
+                  fontSize: '0.82rem',
+                }}
+              >
+                <span style={{ color: isLenValid ? 'var(--clay-success)' : 'var(--clay-text-dim)', fontWeight: 700 }}>
+                  {isLenValid ? '✓' : '○'} 8–16 characters
+                </span>
+                <span style={{ color: hasUppercase ? 'var(--clay-success)' : 'var(--clay-text-dim)', fontWeight: 700 }}>
+                  {hasUppercase ? '✓' : '○'} 1 Uppercase letter
+                </span>
+                <span style={{ color: hasSpecial ? 'var(--clay-success)' : 'var(--clay-text-dim)', fontWeight: 700 }}>
+                  {hasSpecial ? '✓' : '○'} 1 Special character
+                </span>
+                <span style={{ color: 'var(--clay-accent-primary)', fontWeight: 800 }}>
+                  🔒 Role: Normal User
+                </span>
+              </div>
+            </div>
+
+            <div className="clay-form-group">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                <label className="clay-label" htmlFor="register-address">
+                  Physical Address (Optional)
+                </label>
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: formData.address.length > 400 ? 'var(--clay-danger)' : 'var(--clay-text-dim)' }}>
+                  {formData.address.length}/400 chars
+                </span>
+              </div>
+              <textarea
+                id="register-address"
+                className="clay-textarea"
+                placeholder="Enter your street address, city, postal code (max 400 chars)"
+                rows={2}
+                value={formData.address}
+                onChange={(e) => handleChange('address', e.target.value)}
+                style={{ resize: 'vertical' }}
+              />
+              {fieldErrors.address && (
+                <span style={{ color: 'var(--clay-danger)', fontSize: '0.85rem', fontWeight: 700, marginTop: '0.35rem' }}>
+                  {fieldErrors.address}
+                </span>
+              )}
+            </div>
+
+            <Button
+              variant="primary"
+              type="submit"
+              loading={loading}
+              style={{ width: '100%', minHeight: '56px', marginTop: '0.5rem' }}
             >
-              <span style={{ color: isLenValid ? 'var(--accent-success)' : 'var(--text-dim)' }}>
-                {isLenValid ? '✓' : '○'} 8–16 characters
-              </span>
-              <span style={{ color: hasUppercase ? 'var(--accent-success)' : 'var(--text-dim)' }}>
-                {hasUppercase ? '✓' : '○'} 1 Uppercase letter
-              </span>
-              <span style={{ color: hasSpecial ? 'var(--accent-success)' : 'var(--text-dim)' }}>
-                {hasSpecial ? '✓' : '○'} 1 Special character
-              </span>
-              <span style={{ color: 'var(--accent-secondary)' }}>
-                🔒 Role: Normal User
-              </span>
-            </div>
+              Create Account &rarr;
+            </Button>
+          </form>
+
+          {/* Demo Auto-fill Helper */}
+          <div style={{ marginTop: '1.75rem', textAlign: 'center', borderTop: '2px solid rgba(124, 58, 237, 0.08)', paddingTop: '1.25rem' }}>
+            <button
+              type="button"
+              onClick={autofillSampleUser}
+              className="clay-btn clay-btn-secondary clay-btn-sm"
+            >
+              ✨ Autofill Valid Sample User
+            </button>
           </div>
 
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                Address (Optional)
-              </label>
-              <span style={{ fontSize: '0.75rem', color: formData.address.length > 400 ? 'var(--accent-danger)' : 'var(--text-dim)' }}>
-                {formData.address.length}/400 chars
-              </span>
-            </div>
-            <textarea
-              id="register-address"
-              className="input-field"
-              placeholder="Enter your street address, city, postal code (max 400 chars)"
-              rows={2}
-              value={formData.address}
-              onChange={(e) => handleChange('address', e.target.value)}
-              style={{ resize: 'vertical', width: '100%', marginBottom: '1.25rem' }}
-            />
-            {fieldErrors.address && (
-              <span style={{ color: 'var(--accent-danger)', fontSize: '0.75rem', display: 'block', marginTop: '-0.75rem', marginBottom: '1rem' }}>
-                {fieldErrors.address}
-              </span>
-            )}
+          <div style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.95rem', color: 'var(--clay-text-muted)' }}>
+            Already have an account?{' '}
+            <span
+              onClick={() => onNavigate('login')}
+              style={{ color: 'var(--clay-accent-primary)', cursor: 'pointer', fontWeight: 800, fontFamily: 'var(--font-heading)' }}
+            >
+              Sign in here
+            </span>
           </div>
-
-          <Button
-            variant="primary"
-            type="submit"
-            loading={loading}
-            style={{ width: '100%', padding: '0.75rem' }}
-          >
-            Create Account &rarr;
-          </Button>
-        </form>
-
-        {/* Demo Auto-fill Helper */}
-        <div style={{ marginTop: '1.5rem', textAlign: 'center', borderTop: '1px solid var(--border-subtle)', paddingTop: '1rem' }}>
-          <button
-            type="button"
-            onClick={autofillSampleUser}
-            className="btn btn-secondary"
-            style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem' }}
-          >
-            ✨ Autofill Valid Sample User
-          </button>
-        </div>
-
-        <div style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-          Already have an account?{' '}
-          <span
-            onClick={() => onNavigate('login')}
-            style={{ color: 'var(--accent-primary)', cursor: 'pointer', fontWeight: 600 }}
-          >
-            Sign in here
-          </span>
-        </div>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 };

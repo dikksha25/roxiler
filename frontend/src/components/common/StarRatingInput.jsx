@@ -42,15 +42,15 @@ export const StarRatingInput = ({
   };
 
   return (
-    <div style={{ textAlign: 'center', margin: '0.75rem 0' }}>
+    <div style={{ textAlign: 'center', margin: '1rem 0' }}>
       <div
         role="radiogroup"
         aria-label="Store Star Rating Selection"
         style={{
           display: 'flex',
           justifyContent: 'center',
-          gap: '0.5rem',
-          marginBottom: '0.5rem',
+          gap: '0.75rem',
+          marginBottom: '0.75rem',
         }}
       >
         {[1, 2, 3, 4, 5].map((star) => {
@@ -69,17 +69,26 @@ export const StarRatingInput = ({
               onClick={() => !disabled && onChange(star)}
               onKeyDown={(e) => handleKeyDown(e, star)}
               style={{
-                background: 'none',
-                border: 'none',
+                width: '54px',
+                height: '54px',
+                borderRadius: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 fontSize: size,
                 cursor: disabled ? 'not-allowed' : 'pointer',
-                color: isFilled ? '#f59e0b' : 'rgba(255, 255, 255, 0.15)',
-                transition: 'transform 0.15s ease, color 0.15s ease',
-                transform: isFilled ? 'scale(1.15)' : 'scale(1)',
-                padding: '0.15rem',
+                background: isFilled
+                  ? 'var(--clay-gradient-amber)'
+                  : '#EFEBF5',
+                color: isFilled ? '#FFFFFF' : '#B8B2C4',
+                boxShadow: isFilled
+                  ? '8px 8px 16px rgba(245, 158, 11, 0.35), -6px -6px 12px rgba(255, 255, 255, 0.9), inset 3px 3px 6px rgba(255, 255, 255, 0.6), inset -3px -3px 6px rgba(0, 0, 0, 0.1)'
+                  : 'var(--shadow-clay-pressed)',
+                transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, background 0.2s ease',
+                transform: isFilled ? 'scale(1.08) translateY(-2px)' : 'scale(1)',
                 opacity: disabled ? 0.6 : 1,
                 outline: 'none',
-                borderRadius: '4px',
+                border: isSelected ? '2px solid #F59E0B' : '2px solid transparent',
               }}
               title={`Rate ${star} star${star > 1 ? 's' : ''}`}
             >
@@ -92,10 +101,11 @@ export const StarRatingInput = ({
       <div
         aria-live="polite"
         style={{
-          fontSize: '0.9rem',
-          fontWeight: 700,
-          color: '#fbbf24',
-          minHeight: '1.4rem',
+          fontFamily: 'var(--font-heading)',
+          fontSize: '1rem',
+          fontWeight: 800,
+          color: 'var(--clay-warning)',
+          minHeight: '1.5rem',
         }}
       >
         {STAR_LABELS[activeScore]}
@@ -103,4 +113,3 @@ export const StarRatingInput = ({
     </div>
   );
 };
-

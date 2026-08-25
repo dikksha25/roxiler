@@ -12,8 +12,8 @@ import { ROLES, ROLE_LABELS } from '../constants/roles';
 
 export const DashboardPage = ({ onNavigate }) => {
   const { user, updatePassword } = useAuth();
-  const [activeUserTab, setActiveUserTab] = useState('stores'); // 'stores', 'profile'
-  const [activeOwnerTab, setActiveOwnerTab] = useState('analytics'); // 'analytics', 'profile'
+  const [activeUserTab, setActiveUserTab] = useState('stores');
+  const [activeOwnerTab, setActiveOwnerTab] = useState('analytics');
 
   const [passData, setPassData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [passMsg, setPassMsg] = useState(null);
@@ -62,45 +62,46 @@ export const DashboardPage = ({ onNavigate }) => {
   // STORE_OWNER: Dedicated Store Performance, Ratings & Analytics Dashboard
   if (user.role === ROLES.STORE_OWNER) {
     return (
-      <div className="fade-in">
-        {/* Header Tab Bar */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            marginBottom: '1rem',
-            gap: '0.5rem',
-          }}
-        >
-          <button
-            type="button"
-            className={`btn ${activeOwnerTab === 'analytics' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setActiveOwnerTab('analytics')}
-            style={{ fontSize: '0.85rem' }}
+      <div className="clay-page">
+        <div className="clay-container">
+          {/* Header Tab Bar */}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              marginBottom: '1.5rem',
+              gap: '0.75rem',
+            }}
           >
-            📊 Store Analytics & Ratings
-          </button>
-          <button
-            type="button"
-            className={`btn ${activeOwnerTab === 'profile' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setActiveOwnerTab('profile')}
-            style={{ fontSize: '0.85rem' }}
-          >
-            👤 Profile & Password
-          </button>
-        </div>
+            <button
+              type="button"
+              className={`clay-btn ${activeOwnerTab === 'analytics' ? 'clay-btn-primary' : 'clay-btn-secondary'} clay-btn-sm`}
+              onClick={() => setActiveOwnerTab('analytics')}
+            >
+              📊 Store Analytics &amp; Ratings
+            </button>
+            <button
+              type="button"
+              className={`clay-btn ${activeOwnerTab === 'profile' ? 'clay-btn-primary' : 'clay-btn-secondary'} clay-btn-sm`}
+              onClick={() => setActiveOwnerTab('profile')}
+            >
+              👤 Profile &amp; Password
+            </button>
+          </div>
 
-        {activeOwnerTab === 'analytics' && <StoreOwnerDashboard />}
+          {activeOwnerTab === 'analytics' && <StoreOwnerDashboard />}
 
-        {activeOwnerTab === 'profile' && (
-          <div className="fade-in">
-            <div className="grid grid-2" style={{ gap: '1.5rem', marginBottom: '2rem' }}>
+          {activeOwnerTab === 'profile' && (
+            <div className="clay-grid-2" style={{ gap: '2rem', marginBottom: '2.5rem' }}>
               <Card>
-                <h3 style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>👤 Store Owner Profile</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
+                <div className="clay-orb clay-orb-pink" style={{ marginBottom: '1.25rem', width: '52px', height: '52px', fontSize: '1.35rem' }}>
+                  👤
+                </div>
+                <h3 style={{ fontSize: '1.45rem', fontWeight: 900, marginBottom: '0.35rem' }}>Store Owner Identity</h3>
+                <p style={{ color: 'var(--clay-text-muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
                   Your verified merchant identity and contact info.
                 </p>
-                <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{ fontSize: '0.95rem', color: 'var(--clay-text-primary)', display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
                   <div><strong>Merchant Name:</strong> {user.name}</div>
                   <div><strong>Account Email:</strong> {user.email}</div>
                   <div><strong>Physical Address:</strong> {user.address || 'Not specified'}</div>
@@ -109,8 +110,11 @@ export const DashboardPage = ({ onNavigate }) => {
               </Card>
 
               <Card>
-                <h3 style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>🔒 Change Password</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
+                <div className="clay-orb clay-orb-purple" style={{ marginBottom: '1.25rem', width: '52px', height: '52px', fontSize: '1.35rem' }}>
+                  🔒
+                </div>
+                <h3 style={{ fontSize: '1.45rem', fontWeight: 900, marginBottom: '0.35rem' }}>Change Password</h3>
+                <p style={{ color: 'var(--clay-text-muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
                   Update your merchant password securely (8–16 chars, 1 uppercase, 1 special character).
                 </p>
 
@@ -144,75 +148,75 @@ export const DashboardPage = ({ onNavigate }) => {
                     onChange={(e) => setPassData({ ...passData, confirmPassword: e.target.value })}
                     required
                   />
-                  <Button variant="primary" type="submit" loading={passLoading} style={{ marginTop: '0.5rem', width: '100%' }}>
+                  <Button variant="primary" type="submit" loading={passLoading} style={{ marginTop: '0.75rem', width: '100%' }}>
                     Update Password
                   </Button>
                 </form>
               </Card>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     );
   }
 
   // NORMAL_USER View
   return (
-    <div className="fade-in">
-      {/* Header Banner */}
-      <div
-        style={{
-          background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(168, 85, 247, 0.12) 100%)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '2rem',
-          marginBottom: '2rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '1rem',
-        }}
-      >
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-            <h1 style={{ fontSize: '1.75rem', margin: 0 }}>Welcome, {user.name}</h1>
-            <Badge role={user.role} />
+    <div className="clay-page">
+      <div className="clay-container">
+        {/* Header Banner */}
+        <div
+          className="clay-card clay-card-hero"
+          style={{
+            marginBottom: '2.5rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '1.5rem',
+          }}
+        >
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', marginBottom: '0.5rem' }}>
+              <h1 style={{ fontSize: 'clamp(1.85rem, 4vw, 2.5rem)', margin: 0, fontWeight: 900 }}>
+                Welcome, {user.name}
+              </h1>
+              <Badge role={user.role} />
+            </div>
+            <p style={{ color: 'var(--clay-text-muted)', margin: 0, fontSize: '0.95rem' }}>
+              {user.email} &bull; Role: <strong>{ROLE_LABELS[user.role]}</strong>
+            </p>
           </div>
-          <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.9rem' }}>
-            {user.email} &bull; Account Role: <strong>{ROLE_LABELS[user.role]}</strong>
-          </p>
+
+          <div style={{ display: 'flex', gap: '0.65rem' }}>
+            <button
+              className={`clay-btn ${activeUserTab === 'stores' ? 'clay-btn-primary' : 'clay-btn-secondary'} clay-btn-sm`}
+              onClick={() => setActiveUserTab('stores')}
+            >
+              🏪 Stores Directory
+            </button>
+            <button
+              className={`clay-btn ${activeUserTab === 'profile' ? 'clay-btn-primary' : 'clay-btn-secondary'} clay-btn-sm`}
+              onClick={() => setActiveUserTab('profile')}
+            >
+              👤 Profile &amp; Security
+            </button>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button
-            className={`btn ${activeUserTab === 'stores' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setActiveUserTab('stores')}
-            style={{ fontSize: '0.85rem' }}
-          >
-            🏪 Stores Directory
-          </button>
-          <button
-            className={`btn ${activeUserTab === 'profile' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setActiveUserTab('profile')}
-            style={{ fontSize: '0.85rem' }}
-          >
-            👤 Profile & Security
-          </button>
-        </div>
-      </div>
+        {activeUserTab === 'stores' && <UserStoreBrowsePage />}
 
-      {activeUserTab === 'stores' && <UserStoreBrowsePage />}
-
-      {activeUserTab === 'profile' && (
-        <div className="fade-in">
-          <div className="grid grid-2" style={{ gap: '1.5rem', marginBottom: '2rem' }}>
+        {activeUserTab === 'profile' && (
+          <div className="clay-grid-2" style={{ gap: '2rem', marginBottom: '2.5rem' }}>
             <Card>
-              <h3 style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>👤 Account Profile Details</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
-                Your verified user details and platform credentials.
+              <div className="clay-orb clay-orb-blue" style={{ marginBottom: '1.25rem', width: '52px', height: '52px', fontSize: '1.35rem' }}>
+                👤
+              </div>
+              <h3 style={{ fontSize: '1.45rem', fontWeight: 900, marginBottom: '0.35rem' }}>Account Profile</h3>
+              <p style={{ color: 'var(--clay-text-muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+                Your verified user details and credentials.
               </p>
-              <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ fontSize: '0.95rem', color: 'var(--clay-text-primary)', display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
                 <div><strong>Full Name:</strong> {user.name}</div>
                 <div><strong>Email Address:</strong> {user.email}</div>
                 <div><strong>Physical Address:</strong> {user.address || 'Not specified'}</div>
@@ -221,8 +225,11 @@ export const DashboardPage = ({ onNavigate }) => {
             </Card>
 
             <Card>
-              <h3 style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>🔒 Change Password</h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
+              <div className="clay-orb clay-orb-purple" style={{ marginBottom: '1.25rem', width: '52px', height: '52px', fontSize: '1.35rem' }}>
+                🔒
+              </div>
+              <h3 style={{ fontSize: '1.45rem', fontWeight: 900, marginBottom: '0.35rem' }}>Change Password</h3>
+              <p style={{ color: 'var(--clay-text-muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
                 Update your account password securely (8–16 chars, 1 uppercase, 1 special character).
               </p>
 
@@ -256,14 +263,14 @@ export const DashboardPage = ({ onNavigate }) => {
                   onChange={(e) => setPassData({ ...passData, confirmPassword: e.target.value })}
                   required
                 />
-                <Button variant="primary" type="submit" loading={passLoading} style={{ marginTop: '0.5rem', width: '100%' }}>
+                <Button variant="primary" type="submit" loading={passLoading} style={{ marginTop: '0.75rem', width: '100%' }}>
                   Update Password
                 </Button>
               </form>
             </Card>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

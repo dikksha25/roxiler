@@ -14,10 +14,10 @@ export const Input = ({
   ...props
 }) => {
   return (
-    <div className={`form-group ${className}`}>
+    <div className={`clay-form-group ${className}`}>
       {label && (
-        <label htmlFor={id} className="form-label">
-          {label} {required && <span style={{ color: '#ef4444' }}>*</span>}
+        <label htmlFor={id} className="clay-label">
+          {label} {required && <span style={{ color: 'var(--clay-danger)' }}>*</span>}
         </label>
       )}
       <input
@@ -27,13 +27,19 @@ export const Input = ({
         onChange={onChange}
         placeholder={placeholder}
         required={required}
-        className="form-input"
-        style={error ? { borderColor: '#ef4444' } : {}}
+        className="clay-input"
+        style={error ? { borderColor: 'var(--clay-danger)', boxShadow: '0 0 0 3px rgba(239, 68, 68, 0.15)' } : {}}
         {...props}
       />
-      {error && <span className="form-error">{error}</span>}
+      {error && (
+        <span style={{ fontSize: '0.85rem', color: 'var(--clay-danger)', fontWeight: 700, fontFamily: 'var(--font-heading)' }}>
+          {error}
+        </span>
+      )}
       {helperText && !error && (
-        <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{helperText}</span>
+        <span style={{ fontSize: '0.82rem', color: 'var(--clay-text-dim)', fontWeight: 500 }}>
+          {helperText}
+        </span>
       )}
     </div>
   );

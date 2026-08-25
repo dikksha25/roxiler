@@ -11,61 +11,46 @@ export const Navbar = ({ currentRoute, onNavigate }) => {
   };
 
   return (
-    <header className="navbar">
-      <div className="navbar-content">
-        {/* Brand Logo */}
+    <div className="clay-navbar-container">
+      <header className="clay-navbar">
+        {/* Brand Logo with 3D Convex Clay Orb */}
         <div
-          className="brand"
           onClick={() => onNavigate('home')}
-          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.65rem' }}
+          style={{
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.85rem',
+          }}
         >
-          <div
+          <div className="clay-orb clay-orb-purple" style={{ width: '44px', height: '44px', fontSize: '1.3rem' }}>
+            ⭐
+          </div>
+          <span
             style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '10px',
-              background: 'var(--accent-gradient)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+              fontFamily: 'var(--font-heading)',
+              fontSize: '1.45rem',
+              fontWeight: 900,
+              letterSpacing: '-0.02em',
+              color: 'var(--clay-text-primary)',
             }}
           >
-            <span style={{ fontSize: '1.2rem', color: '#fff', fontWeight: 800 }}>⭐</span>
-          </div>
-          <span style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
-            Store<span style={{ color: 'var(--accent-primary)' }}>Rate</span>
+            Store<span style={{ color: 'var(--clay-accent-primary)' }}>Rate</span>
           </span>
         </div>
 
         {/* Navigation Links */}
-        <nav style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <nav style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
           <button
             onClick={() => onNavigate('home')}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: currentRoute === 'home' ? 'var(--accent-primary)' : 'var(--text-secondary)',
-              fontWeight: currentRoute === 'home' ? 600 : 500,
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              padding: '0.4rem 0.6rem',
-            }}
+            className={`clay-nav-link ${currentRoute === 'home' ? 'active' : ''}`}
           >
             Home
           </button>
 
           <button
             onClick={() => onNavigate('stores')}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: currentRoute === 'stores' ? 'var(--accent-primary)' : 'var(--text-secondary)',
-              fontWeight: currentRoute === 'stores' ? 600 : 500,
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              padding: '0.4rem 0.6rem',
-            }}
+            className={`clay-nav-link ${currentRoute === 'stores' ? 'active' : ''}`}
           >
             Stores Directory
           </button>
@@ -74,15 +59,7 @@ export const Navbar = ({ currentRoute, onNavigate }) => {
             <>
               <button
                 onClick={() => onNavigate('dashboard')}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: currentRoute === 'dashboard' ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                  fontWeight: currentRoute === 'dashboard' ? 600 : 500,
-                  cursor: 'pointer',
-                  fontSize: '0.9rem',
-                  padding: '0.4rem 0.6rem',
-                }}
+                className={`clay-nav-link ${currentRoute === 'dashboard' ? 'active' : ''}`}
               >
                 Dashboard
               </button>
@@ -91,14 +68,21 @@ export const Navbar = ({ currentRoute, onNavigate }) => {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.65rem',
+                  gap: '0.85rem',
                   marginLeft: '0.5rem',
-                  paddingLeft: '0.75rem',
-                  borderLeft: '1px solid var(--border-subtle)',
+                  paddingLeft: '0.85rem',
+                  borderLeft: '2px solid rgba(124, 58, 237, 0.12)',
                 }}
               >
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.15rem' }}>
+                  <div
+                    style={{
+                      fontSize: '0.9rem',
+                      fontWeight: 800,
+                      color: 'var(--clay-text-primary)',
+                      fontFamily: 'var(--font-heading)',
+                    }}
+                  >
                     {user.name}
                   </div>
                   <Badge role={user.role} />
@@ -106,12 +90,7 @@ export const Navbar = ({ currentRoute, onNavigate }) => {
 
                 <button
                   onClick={handleLogout}
-                  className="btn btn-secondary"
-                  style={{
-                    fontSize: '0.8rem',
-                    padding: '0.35rem 0.75rem',
-                    marginLeft: '0.35rem',
-                  }}
+                  className="clay-btn clay-btn-secondary clay-btn-sm"
                   title="Sign Out"
                 >
                   Logout
@@ -119,25 +98,23 @@ export const Navbar = ({ currentRoute, onNavigate }) => {
               </div>
             </>
           ) : (
-            <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '0.5rem' }}>
+            <div style={{ display: 'flex', gap: '0.65rem', marginLeft: '0.5rem' }}>
               <button
                 onClick={() => onNavigate('login')}
-                className="btn btn-secondary"
-                style={{ fontSize: '0.85rem', padding: '0.45rem 0.9rem' }}
+                className="clay-btn clay-btn-secondary clay-btn-sm"
               >
                 Sign In
               </button>
               <button
                 onClick={() => onNavigate('register')}
-                className="btn btn-primary"
-                style={{ fontSize: '0.85rem', padding: '0.45rem 0.9rem' }}
+                className="clay-btn clay-btn-primary clay-btn-sm"
               >
                 Register
               </button>
             </div>
           )}
         </nav>
-      </div>
-    </header>
+      </header>
+    </div>
   );
 };

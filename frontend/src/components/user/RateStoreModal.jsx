@@ -26,7 +26,7 @@ export const RateStoreModal = ({ isOpen, onClose, store, onRatingSubmitted }) =>
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (loading) return; // Prevent duplicate clicks
+    if (loading) return;
 
     setError(null);
 
@@ -41,13 +41,11 @@ export const RateStoreModal = ({ isOpen, onClose, store, onRatingSubmitted }) =>
     try {
       let res;
       if (isModify) {
-        // State B: Modify Existing Rating (PUT /api/v1/ratings/:storeId)
         res = await ratingService.modifyRating(store.id, {
           rating: score,
           comment,
         });
       } else {
-        // State A: Submit New Rating (POST /api/v1/ratings)
         res = await ratingService.submitRating({
           storeId: store.id,
           rating: score,
@@ -81,7 +79,7 @@ export const RateStoreModal = ({ isOpen, onClose, store, onRatingSubmitted }) =>
       isOpen={isOpen}
       onClose={onClose}
       title={isModify ? `✏️ Modify Rating: ${store.name}` : `⭐ Rate: ${store.name}`}
-      maxWidth="500px"
+      maxWidth="540px"
     >
       {error && <Alert type="error" message={error} onClose={() => setError(null)} />}
 
@@ -89,27 +87,27 @@ export const RateStoreModal = ({ isOpen, onClose, store, onRatingSubmitted }) =>
         {/* State Banner */}
         <div
           style={{
-            background: isModify ? 'rgba(99, 102, 241, 0.08)' : 'rgba(245, 158, 11, 0.08)',
-            border: `1px solid ${isModify ? 'rgba(99, 102, 241, 0.2)' : 'rgba(245, 158, 11, 0.2)'}`,
-            borderRadius: 'var(--radius-md)',
-            padding: '0.75rem 1rem',
-            marginBottom: '1rem',
-            fontSize: '0.85rem',
-            color: 'var(--text-secondary)',
+            background: isModify ? 'rgba(124, 58, 237, 0.08)' : 'rgba(245, 158, 11, 0.08)',
+            border: `2px solid ${isModify ? 'rgba(124, 58, 237, 0.2)' : 'rgba(245, 158, 11, 0.25)'}`,
+            borderRadius: 'var(--radius-clay-inner)',
+            padding: '1rem 1.25rem',
+            marginBottom: '1.25rem',
+            fontSize: '0.92rem',
+            color: 'var(--clay-text-primary)',
           }}
         >
           {isModify ? (
             <div>
-              <strong>Current Submitted Rating:</strong> {store.user_rating} / 5 Stars.
-              <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+              <strong style={{ color: 'var(--clay-accent-primary)' }}>Your Existing Rating:</strong> {store.user_rating} / 5 Stars.
+              <span style={{ display: 'block', fontSize: '0.82rem', color: 'var(--clay-text-muted)', marginTop: '0.25rem' }}>
                 Select a new score below to update your rating for this store.
               </span>
             </div>
           ) : (
             <div>
-              <strong>New Store Review:</strong>
-              <span style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                You haven't rated this store yet. Share your 1 to 5 star rating with the community.
+              <strong style={{ color: 'var(--clay-warning)' }}>New Verified Rating:</strong>
+              <span style={{ display: 'block', fontSize: '0.82rem', color: 'var(--clay-text-muted)', marginTop: '0.25rem' }}>
+                Select 1 to 5 stars to publish your customer score for this store.
               </span>
             </div>
           )}
@@ -123,31 +121,24 @@ export const RateStoreModal = ({ isOpen, onClose, store, onRatingSubmitted }) =>
         />
 
         {/* Optional Review Comment */}
-        <div style={{ margin: '1.25rem 0' }}>
+        <div className="clay-form-group" style={{ margin: '1.5rem 0' }}>
           <label
             htmlFor="rate-comment-input"
-            style={{
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              color: 'var(--text-secondary)',
-              display: 'block',
-              marginBottom: '0.4rem',
-            }}
+            className="clay-label"
           >
-            Review & Experience Feedback (Optional)
+            Review Feedback (Optional)
           </label>
           <textarea
             id="rate-comment-input"
-            className="input-field"
-            placeholder="Describe your customer experience, food or product quality, staff friendliness, cleanliness..."
+            className="clay-textarea"
+            placeholder="Describe your customer experience, food quality, staff friendliness..."
             rows={3}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             disabled={loading}
-            style={{ width: '100%', resize: 'vertical' }}
             maxLength={500}
           />
-          <div style={{ textAlign: 'right', fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '0.25rem' }}>
+          <div style={{ textAlign: 'right', fontSize: '0.8rem', color: 'var(--clay-text-dim)', marginTop: '0.35rem', fontWeight: 600 }}>
             {comment.length} / 500 characters
           </div>
         </div>
@@ -157,9 +148,9 @@ export const RateStoreModal = ({ isOpen, onClose, store, onRatingSubmitted }) =>
           style={{
             display: 'flex',
             justifyContent: 'flex-end',
-            gap: '0.75rem',
-            borderTop: '1px solid var(--border-subtle)',
-            paddingTop: '1rem',
+            gap: '0.85rem',
+            borderTop: '2px solid rgba(124, 58, 237, 0.08)',
+            paddingTop: '1.25rem',
           }}
         >
           <Button variant="secondary" type="button" onClick={onClose} disabled={loading}>
@@ -171,7 +162,7 @@ export const RateStoreModal = ({ isOpen, onClose, store, onRatingSubmitted }) =>
             loading={loading}
             disabled={loading}
           >
-            {isModify ? 'Update My Rating' : 'Submit Rating'}
+            {isModify ? 'Update Rating' : 'Submit Rating'}
           </Button>
         </div>
       </form>

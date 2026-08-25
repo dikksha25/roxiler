@@ -60,12 +60,12 @@ export const ChangePasswordModal = ({ isOpen, onClose }) => {
     setLoading(false);
 
     if (res.success) {
-      setSuccess('Password changed successfully! Please use your new password next time you log in.');
+      setSuccess('Password changed successfully! Please use your new credentials on your next login.');
       setFormData({ currentPassword: '', newPassword: '', confirmPassword: '' });
       setTimeout(() => {
         setSuccess(null);
         onClose();
-      }, 2500);
+      }, 2000);
     } else {
       setError(res.message || 'Failed to change password. Please check your current password.');
     }
@@ -73,40 +73,27 @@ export const ChangePasswordModal = ({ isOpen, onClose }) => {
 
   return (
     <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.75)',
-        backdropFilter: 'blur(8px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-        padding: '1rem',
-      }}
+      className="clay-modal-overlay"
       onClick={(e) => {
         if (e.target === e.currentTarget && !loading) onClose();
       }}
     >
-      <div
-        className="fade-in"
-        style={{
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: 'var(--radius-lg)',
-          width: '100%',
-          maxWidth: '520px',
-          padding: '2rem',
-          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.5)',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
+      <div className="clay-modal-dialog" style={{ maxWidth: '520px' }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            marginBottom: '1.5rem',
+            paddingBottom: '1rem',
+            borderBottom: '2px solid rgba(124, 58, 237, 0.08)',
+          }}
+        >
           <div>
-            <h2 style={{ fontSize: '1.35rem', margin: '0 0 0.25rem 0' }}>🔒 Change Password</h2>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>
+            <h2 style={{ fontSize: '1.45rem', margin: '0 0 0.25rem 0', fontFamily: 'var(--font-heading)', fontWeight: 900 }}>
+              🔒 Change Password
+            </h2>
+            <p style={{ color: 'var(--clay-text-muted)', fontSize: '0.9rem', margin: 0 }}>
               Update your account credentials securely.
             </p>
           </div>
@@ -114,15 +101,19 @@ export const ChangePasswordModal = ({ isOpen, onClose }) => {
             type="button"
             onClick={onClose}
             disabled={loading}
+            aria-label="Close modal"
+            className="clay-btn clay-btn-secondary clay-btn-sm"
             style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text-dim)',
-              fontSize: '1.25rem',
-              cursor: 'pointer',
+              width: '38px',
+              height: '38px',
+              minHeight: '38px',
+              padding: 0,
+              borderRadius: '50%',
+              fontSize: '1.2rem',
+              lineHeight: 1,
             }}
           >
-            ✕
+            &times;
           </button>
         </div>
 
@@ -166,34 +157,43 @@ export const ChangePasswordModal = ({ isOpen, onClose }) => {
           {/* Real-time requirements checklist */}
           <div
             style={{
-              background: 'rgba(255, 255, 255, 0.02)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-md)',
-              padding: '0.85rem 1rem',
+              background: '#EFEBF5',
+              borderRadius: 'var(--radius-clay-inner)',
+              padding: '1.1rem 1.25rem',
               marginBottom: '1.5rem',
-              fontSize: '0.78rem',
+              boxShadow: 'var(--shadow-clay-pressed)',
             }}
           >
-            <span style={{ fontWeight: 600, color: 'var(--text-dim)', display: 'block', marginBottom: '0.4rem' }}>
-              PASSWORD REQUIREMENTS:
+            <span
+              style={{
+                fontFamily: 'var(--font-heading)',
+                fontWeight: 900,
+                fontSize: '0.82rem',
+                color: 'var(--clay-text-primary)',
+                letterSpacing: '0.04em',
+                display: 'block',
+                marginBottom: '0.65rem',
+              }}
+            >
+              PASSWORD CRITERIA:
             </span>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.35rem' }}>
-              <span style={{ color: isLenValid ? 'var(--accent-success)' : 'var(--text-muted)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.85rem' }}>
+              <span style={{ color: isLenValid ? 'var(--clay-success)' : 'var(--clay-text-muted)', fontWeight: 700 }}>
                 {isLenValid ? '✓' : '○'} 8 to 16 characters
               </span>
-              <span style={{ color: isUpperValid ? 'var(--accent-success)' : 'var(--text-muted)' }}>
+              <span style={{ color: isUpperValid ? 'var(--clay-success)' : 'var(--clay-text-muted)', fontWeight: 700 }}>
                 {isUpperValid ? '✓' : '○'} 1 uppercase letter
               </span>
-              <span style={{ color: isSpecialValid ? 'var(--accent-success)' : 'var(--text-muted)' }}>
+              <span style={{ color: isSpecialValid ? 'var(--clay-success)' : 'var(--clay-text-muted)', fontWeight: 700 }}>
                 {isSpecialValid ? '✓' : '○'} 1 special character
               </span>
-              <span style={{ color: isMatchValid ? 'var(--accent-success)' : 'var(--text-muted)' }}>
+              <span style={{ color: isMatchValid ? 'var(--clay-success)' : 'var(--clay-text-muted)', fontWeight: 700 }}>
                 {isMatchValid ? '✓' : '○'} Passwords match
               </span>
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+          <div style={{ display: 'flex', gap: '0.85rem', justifyContent: 'flex-end' }}>
             <Button variant="secondary" type="button" onClick={onClose} disabled={loading}>
               Cancel
             </Button>

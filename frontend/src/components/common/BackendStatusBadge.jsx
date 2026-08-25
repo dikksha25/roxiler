@@ -36,42 +36,50 @@ export const BackendStatusBadge = () => {
         display: 'inline-flex',
         alignItems: 'center',
         gap: '0.65rem',
-        padding: '0.45rem 0.9rem',
-        borderRadius: 'var(--radius-full)',
+        padding: '0.45rem 1rem',
+        borderRadius: '9999px',
         background: status === 'online' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-        border: `1px solid ${status === 'online' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
-        fontSize: '0.8rem',
-        fontWeight: 600,
+        boxShadow: status === 'online' ? 'inset 2px 2px 4px rgba(255,255,255,0.8), inset -2px -2px 4px rgba(16, 185, 129, 0.15)' : 'none',
+        border: `1.5px solid ${status === 'online' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+        fontSize: '0.82rem',
+        fontWeight: 700,
       }}
     >
-      <span className={`pulse-dot ${status === 'online' ? 'online' : 'offline'}`} />
+      <span
+        style={{
+          width: '8px',
+          height: '8px',
+          borderRadius: '50%',
+          background: status === 'online' ? 'var(--clay-success)' : 'var(--clay-danger)',
+          boxShadow: status === 'online' ? '0 0 8px rgba(16, 185, 129, 0.6)' : '0 0 8px rgba(239, 68, 68, 0.6)',
+          display: 'inline-block',
+        }}
+      />
       <span>
         {status === 'checking' && 'Pinging Express API...'}
         {status === 'online' && (
           <>
-            <span style={{ color: '#34d399' }}>Backend Connected</span>
+            <span style={{ color: 'var(--clay-success)' }}>API Online</span>
             {latency && (
-              <span style={{ color: 'var(--text-dim)', marginLeft: '6px' }}>({latency}ms)</span>
+              <span style={{ color: 'var(--clay-text-dim)', marginLeft: '6px', fontWeight: 500 }}>({latency}ms)</span>
             )}
           </>
         )}
         {status === 'error' && (
-          <span style={{ color: '#f87171' }}>Backend Offline / Disconnected</span>
+          <span style={{ color: 'var(--clay-danger)' }}>API Disconnected</span>
         )}
       </span>
       {health?.database && (
         <span
+          className="clay-badge clay-badge-green"
           style={{
             marginLeft: '4px',
-            padding: '2px 6px',
-            borderRadius: '4px',
-            fontSize: '0.7rem',
-            background: health.database.connected ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)',
-            color: health.database.connected ? '#6ee7b7' : '#fcd34d',
+            padding: '2px 8px',
+            fontSize: '0.72rem',
           }}
           title={health.database.message}
         >
-          DB: {health.database.connected ? 'PostgreSQL Ready' : 'Configured'}
+          {health.database.connected ? 'PostgreSQL Ready' : 'Configured'}
         </span>
       )}
     </div>

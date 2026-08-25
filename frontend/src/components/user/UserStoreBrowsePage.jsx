@@ -113,7 +113,6 @@ export const UserStoreBrowsePage = () => {
   };
 
   const handleRatingSuccess = ({ storeId, ratingValue, comment, isModify }) => {
-    // 1. Optimistically update local store item
     setStores((prevStores) =>
       prevStores.map((st) => {
         if (st.id === storeId) {
@@ -134,342 +133,292 @@ export const UserStoreBrowsePage = () => {
         : `Thank you! Your ${ratingValue}-star rating was recorded successfully.`
     );
 
-    // 2. Fetch fresh aggregates from server
     fetchStores();
   };
 
   return (
-    <div className="fade-in">
-      {/* Header Banner */}
-      <div
-        style={{
-          background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.15) 100%)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '2rem',
-          marginBottom: '2rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '1rem',
-        }}
-      >
-        <div>
-          <h1 style={{ fontSize: '1.85rem', margin: '0 0 0.5rem 0', letterSpacing: '-0.02em' }}>
-            🏪 Commercial Stores Directory
-          </h1>
-          <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.95rem' }}>
-            Browse registered stores, view overall ratings, and submit or modify your personal star ratings.
-          </p>
-        </div>
-
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button
-            type="button"
-            className={`btn ${viewMode === 'grid' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setViewMode('grid')}
-            style={{ fontSize: '0.85rem' }}
-          >
-            🔲 Grid Cards
-          </button>
-          <button
-            type="button"
-            className={`btn ${viewMode === 'table' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setViewMode('table')}
-            style={{ fontSize: '0.85rem' }}
-          >
-            📋 Table View
-          </button>
-        </div>
-      </div>
-
-      {successMsg && (
-        <Alert type="success" message={successMsg} onClose={() => setSuccessMsg(null)} />
-      )}
-      {error && <Alert type="error" message={error} onClose={() => setError(null)} />}
-
-      {/* Filter & Search Bar */}
-      <Card style={{ marginBottom: '1.5rem', padding: '1.25rem' }}>
-        <div className="grid grid-3" style={{ gap: '0.75rem', alignItems: 'flex-end' }}>
-          {/* Global Search */}
+    <div className="clay-page">
+      <div className="clay-container">
+        {/* Header Title & View Toggle */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '1.25rem',
+            marginBottom: '2rem',
+          }}
+        >
           <div>
-            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-dim)', display: 'block', marginBottom: '0.25rem' }}>
-              SEARCH STORES
-            </label>
-            <input
-              type="text"
-              className="input-field"
-              placeholder="Search by store name or address..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              style={{ fontSize: '0.85rem', width: '100%' }}
-            />
+            <span className="clay-badge clay-badge-purple" style={{ marginBottom: '0.5rem' }}>
+              COMMUNITY RATINGS
+            </span>
+            <h1 style={{ fontSize: 'clamp(1.85rem, 4vw, 2.5rem)', margin: 0, fontWeight: 900 }}>
+              🏪 Store Catalog &amp; Reviews
+            </h1>
           </div>
 
-          {/* Sort Criteria */}
-          <div>
-            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-dim)', display: 'block', marginBottom: '0.25rem' }}>
-              SORT STORES BY
-            </label>
-            <div style={{ display: 'flex', gap: '0.35rem' }}>
-              <select
-                className="input-field"
-                value={sort.sortBy}
-                onChange={(e) => setSort((prev) => ({ ...prev, sortBy: e.target.value }))}
-                style={{ fontSize: '0.85rem', flex: 1 }}
-              >
-                <option value="rating">Overall Rating (Highest)</option>
-                <option value="user_rating">My Submitted Rating</option>
-                <option value="name">Store Name</option>
-                <option value="address">Address</option>
-                <option value="created_at">Date Added</option>
-              </select>
-
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => setSort((prev) => ({ ...prev, sortOrder: prev.sortOrder === 'ASC' ? 'DESC' : 'ASC' }))}
-                style={{ fontSize: '0.85rem', padding: '0 0.6rem' }}
-                title="Toggle ASC/DESC"
-              >
-                {sort.sortOrder === 'ASC' ? '▲ ASC' : '▼ DESC'}
-              </button>
-            </div>
-          </div>
-
-          {/* Filter Toggle & Clear */}
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <Button
-              variant="secondary"
-              onClick={() => setShowAdvancedFilters((prev) => !prev)}
-              style={{ flex: 1, fontSize: '0.85rem' }}
+          <div style={{ display: 'flex', gap: '0.65rem' }}>
+            <button
+              type="button"
+              className={`clay-btn ${viewMode === 'grid' ? 'clay-btn-primary' : 'clay-btn-secondary'} clay-btn-sm`}
+              onClick={() => setViewMode('grid')}
             >
-              {showAdvancedFilters ? '▲ Hide Filters' : '▼ Specific Filters'}
-            </Button>
-            {activeFiltersCount > 0 && (
+              🔲 Grid Cards
+            </button>
+            <button
+              type="button"
+              className={`clay-btn ${viewMode === 'table' ? 'clay-btn-primary' : 'clay-btn-secondary'} clay-btn-sm`}
+              onClick={() => setViewMode('table')}
+            >
+              📋 Table View
+            </button>
+          </div>
+        </div>
+
+        {successMsg && (
+          <Alert type="success" message={successMsg} onClose={() => setSuccessMsg(null)} />
+        )}
+        {error && <Alert type="error" message={error} onClose={() => setError(null)} />}
+
+        {/* Filter & Search Bar */}
+        <Card style={{ marginBottom: '2rem', padding: '1.75rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem', alignItems: 'flex-end' }}>
+            {/* Global Search */}
+            <div>
+              <label className="clay-label" style={{ fontSize: '0.85rem', display: 'block', marginBottom: '0.4rem' }}>
+                SEARCH STORES
+              </label>
+              <input
+                type="text"
+                className="clay-input"
+                placeholder="Search by store name or address..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+              />
+            </div>
+
+            {/* Sort Criteria */}
+            <div>
+              <label className="clay-label" style={{ fontSize: '0.85rem', display: 'block', marginBottom: '0.4rem' }}>
+                SORT STORES BY
+              </label>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <select
+                  className="clay-select"
+                  value={sort.sortBy}
+                  onChange={(e) => setSort((prev) => ({ ...prev, sortBy: e.target.value }))}
+                  style={{ flex: 1 }}
+                >
+                  <option value="rating">Overall Rating (Highest)</option>
+                  <option value="user_rating">My Submitted Rating</option>
+                  <option value="name">Store Name</option>
+                  <option value="address">Address</option>
+                  <option value="created_at">Date Added</option>
+                </select>
+
+                <button
+                  type="button"
+                  className="clay-btn clay-btn-secondary clay-btn-sm"
+                  onClick={() => setSort((prev) => ({ ...prev, sortOrder: prev.sortOrder === 'ASC' ? 'DESC' : 'ASC' }))}
+                  title="Toggle ASC/DESC"
+                >
+                  {sort.sortOrder === 'ASC' ? '▲ ASC' : '▼ DESC'}
+                </button>
+              </div>
+            </div>
+
+            {/* Filter Toggle & Clear */}
+            <div style={{ display: 'flex', gap: '0.65rem' }}>
               <Button
                 variant="secondary"
-                onClick={handleClearAllFilters}
-                style={{ fontSize: '0.85rem' }}
+                onClick={() => setShowAdvancedFilters((prev) => !prev)}
+                style={{ flex: 1 }}
               >
-                Clear ({activeFiltersCount})
+                {showAdvancedFilters ? '▲ Hide Filters' : '▼ Specific Filters'}
               </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Collapsible Specific Filters */}
-        {showAdvancedFilters && (
-          <div
-            className="grid grid-2 fade-in"
-            style={{
-              gap: '0.75rem',
-              marginTop: '1rem',
-              paddingTop: '1rem',
-              borderTop: '1px solid var(--border-subtle)',
-            }}
-          >
-            <div>
-              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-dim)', display: 'block', marginBottom: '0.25rem' }}>
-                FILTER BY STORE NAME
-              </label>
-              <input
-                type="text"
-                className="input-field"
-                placeholder="e.g. FreshMart"
-                value={nameInput}
-                onChange={(e) => setNameInput(e.target.value)}
-                style={{ fontSize: '0.85rem', width: '100%' }}
-              />
-            </div>
-            <div>
-              <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-dim)', display: 'block', marginBottom: '0.25rem' }}>
-                FILTER BY ADDRESS
-              </label>
-              <input
-                type="text"
-                className="input-field"
-                placeholder="e.g. Plaza or Avenue"
-                value={addressInput}
-                onChange={(e) => setAddressInput(e.target.value)}
-                style={{ fontSize: '0.85rem', width: '100%' }}
-              />
+              {activeFiltersCount > 0 && (
+                <Button
+                  variant="secondary"
+                  onClick={handleClearAllFilters}
+                >
+                  Clear ({activeFiltersCount})
+                </Button>
+              )}
             </div>
           </div>
-        )}
-      </Card>
 
-      {/* Main Content Area */}
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '4rem 1rem' }}>
-          <Spinner size={40} />
-          <p style={{ marginTop: '1rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            Fetching stores and your personalized rating status...
-          </p>
-        </div>
-      ) : stores.length === 0 ? (
-        <Card style={{ textAlign: 'center', padding: '3.5rem 1rem' }}>
-          <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '1rem' }}>🔍</span>
-          <h3 style={{ margin: '0 0 0.5rem 0' }}>No Stores Found</h3>
-          <p style={{ color: 'var(--text-muted)', maxWidth: '400px', margin: '0 auto 1.5rem auto', fontSize: '0.9rem' }}>
-            We couldn't find any stores matching your current search criteria. Try adjusting your filters.
-          </p>
-          <Button variant="secondary" onClick={handleClearAllFilters}>
-            Reset All Filters
-          </Button>
+          {/* Collapsible Specific Filters */}
+          {showAdvancedFilters && (
+            <div
+              className="clay-grid-2"
+              style={{
+                marginTop: '1.5rem',
+                paddingTop: '1.5rem',
+                borderTop: '2px solid rgba(124, 58, 237, 0.08)',
+              }}
+            >
+              <div>
+                <label className="clay-label" style={{ fontSize: '0.85rem', display: 'block', marginBottom: '0.4rem' }}>
+                  FILTER BY STORE NAME
+                </label>
+                <input
+                  type="text"
+                  className="clay-input"
+                  placeholder="e.g. FreshMart"
+                  value={nameInput}
+                  onChange={(e) => setNameInput(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="clay-label" style={{ fontSize: '0.85rem', display: 'block', marginBottom: '0.4rem' }}>
+                  FILTER BY ADDRESS
+                </label>
+                <input
+                  type="text"
+                  className="clay-input"
+                  placeholder="e.g. Plaza or Avenue"
+                  value={addressInput}
+                  onChange={(e) => setAddressInput(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
         </Card>
-      ) : viewMode === 'grid' ? (
-        /* GRID CARDS VIEW */
-        <div className="grid grid-3" style={{ gap: '1.25rem', marginBottom: '1.5rem' }}>
-          {stores.map((s) => {
-            const overallAvg = parseFloat(s.overall_rating || s.average_rating || 0);
-            const reviewCount = s.rating_count || 0;
-            const hasReviews = reviewCount > 0 && overallAvg > 0;
-            const isUserRated = s.user_rating !== null && s.user_rating !== undefined;
 
-            return (
-              <Card
-                key={s.id}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  transition: 'transform 0.2s ease, border-color 0.2s ease',
-                  padding: '1.5rem',
-                }}
-              >
-                <div>
-                  {/* Top Bar: Store Name & Overall Rating Badge */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                    <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-primary)', lineHeight: 1.3 }}>
-                      {s.name}
-                    </h3>
-                  </div>
+        {/* Main Content Area */}
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '5rem 1rem' }}>
+            <Spinner size={48} />
+            <p style={{ marginTop: '1.25rem', color: 'var(--clay-text-muted)', fontSize: '1rem', fontWeight: 600 }}>
+              Fetching stores and personalized ratings...
+            </p>
+          </div>
+        ) : stores.length === 0 ? (
+          <Card style={{ textAlign: 'center', padding: '4rem 1.5rem' }}>
+            <div className="clay-orb clay-orb-purple" style={{ margin: '0 auto 1.5rem', width: '64px', height: '64px', fontSize: '1.8rem' }}>
+              🔍
+            </div>
+            <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.5rem', fontWeight: 900 }}>No Stores Found</h3>
+            <p style={{ color: 'var(--clay-text-muted)', maxWidth: '420px', margin: '0 auto 1.75rem auto' }}>
+              We couldn't find any stores matching your current search criteria. Try adjusting your filters.
+            </p>
+            <Button variant="secondary" onClick={handleClearAllFilters}>
+              Reset All Filters
+            </Button>
+          </Card>
+        ) : viewMode === 'grid' ? (
+          /* GRID CARDS VIEW */
+          <div className="clay-grid-3" style={{ marginBottom: '2.5rem' }}>
+            {stores.map((s) => {
+              const overallAvg = parseFloat(s.overall_rating || s.average_rating || 0);
+              const reviewCount = s.rating_count || 0;
+              const hasReviews = reviewCount > 0 && overallAvg > 0;
+              const isUserRated = s.user_rating !== null && s.user_rating !== undefined;
 
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '0 0 1rem 0' }}>
-                    📍 {s.address}
-                  </p>
-
-                  {/* Rating Box 1: Overall Store Rating */}
-                  <div
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.02)',
-                      border: '1px solid var(--border-subtle)',
-                      borderRadius: 'var(--radius-md)',
-                      padding: '0.85rem 1rem',
-                      marginBottom: '0.75rem',
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', fontWeight: 600, textTransform: 'uppercase' }}>
-                        Overall Community Rating
-                      </span>
-                      <span style={{ color: hasReviews ? '#f59e0b' : 'var(--text-dim)', fontSize: '1rem', fontWeight: 800 }}>
-                        {hasReviews ? `★ ${overallAvg.toFixed(2)}` : 'No ratings yet'}
-                      </span>
+              return (
+                <Card
+                  key={s.id}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <div>
+                    {/* Store Title & Address */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                      <div className="clay-orb clay-orb-pink" style={{ width: '42px', height: '42px', fontSize: '1.15rem' }}>
+                        🏪
+                      </div>
+                      <h3 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 900, lineHeight: 1.25 }}>
+                        {s.name}
+                      </h3>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.35rem' }}>
-                      <span style={{ color: hasReviews ? '#fbbf24' : 'rgba(255, 255, 255, 0.2)', fontSize: '0.9rem' }}>
-                        {hasReviews
-                          ? '★'.repeat(Math.round(overallAvg)) + '☆'.repeat(5 - Math.round(overallAvg))
-                          : '☆☆☆☆☆'}
-                      </span>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                        {hasReviews ? `${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'}` : '0 reviews'}
-                      </span>
-                    </div>
-                  </div>
+                    <p style={{ color: 'var(--clay-text-muted)', fontSize: '0.9rem', margin: '0 0 1.25rem 0' }}>
+                      📍 {s.address}
+                    </p>
 
-                  {/* Rating Box 2: User's Own Submitted Rating */}
-                  <div
-                    style={{
-                      background: isUserRated ? 'rgba(16, 185, 129, 0.05)' : 'rgba(255, 255, 255, 0.01)',
-                      border: isUserRated ? '1px solid rgba(16, 185, 129, 0.25)' : '1px dashed var(--border-subtle)',
-                      borderRadius: 'var(--radius-md)',
-                      padding: '0.85rem 1rem',
-                      marginBottom: '1rem',
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', fontWeight: 600, textTransform: 'uppercase' }}>
-                        Your Rating Status
-                      </span>
+                    {/* Overall Rating Box */}
+                    <div
+                      style={{
+                        background: '#EFEBF5',
+                        borderRadius: 'var(--radius-clay-inner)',
+                        padding: '1rem 1.15rem',
+                        marginBottom: '1rem',
+                        boxShadow: 'var(--shadow-clay-pressed)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.78rem', color: 'var(--clay-text-primary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                          Community Score
+                        </span>
+                        <span style={{ color: hasReviews ? 'var(--clay-warning)' : 'var(--clay-text-dim)', fontSize: '1.15rem', fontWeight: 900, fontFamily: 'var(--font-heading)' }}>
+                          {hasReviews ? `★ ${overallAvg.toFixed(2)}` : 'No ratings'}
+                        </span>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.4rem' }}>
+                        <span style={{ color: hasReviews ? 'var(--clay-warning)' : '#B8B2C4', fontSize: '1.1rem', letterSpacing: '0.1em' }}>
+                          {hasReviews
+                            ? '★'.repeat(Math.round(overallAvg)) + '☆'.repeat(5 - Math.round(overallAvg))
+                            : '☆☆☆☆☆'}
+                        </span>
+                        <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--clay-text-muted)' }}>
+                          {hasReviews ? `${reviewCount} ${reviewCount === 1 ? 'review' : 'reviews'}` : '0 reviews'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* User Rating Status Badge */}
+                    <div style={{ marginBottom: '1.25rem' }}>
                       {isUserRated ? (
-                        <span style={{ color: 'var(--accent-success)', fontSize: '0.85rem', fontWeight: 700 }}>
+                        <span className="clay-badge clay-badge-green" style={{ width: '100%', justifyContent: 'center', padding: '0.5rem 1rem' }}>
                           ⭐ You Rated: {s.user_rating} / 5 Stars
                         </span>
                       ) : (
-                        <span style={{ color: 'var(--text-dim)', fontSize: '0.75rem' }}>
+                        <span className="clay-badge" style={{ width: '100%', justifyContent: 'center', padding: '0.5rem 1rem', color: 'var(--clay-text-dim)' }}>
                           ⚪ Not Rated Yet
                         </span>
                       )}
                     </div>
-                    {isUserRated && s.my_comment && (
-                      <div
-                        style={{
-                          fontSize: '0.75rem',
-                          color: 'var(--text-muted)',
-                          fontStyle: 'italic',
-                          marginTop: '0.35rem',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        "{s.my_comment}"
-                      </div>
-                    )}
                   </div>
-                </div>
 
-                {/* Rating CTA Button */}
-                <div>
-                  <Button
-                    variant={isUserRated ? 'secondary' : 'primary'}
-                    onClick={() => setSelectedStoreForRating(s)}
-                    style={{ width: '100%', fontSize: '0.85rem' }}
-                  >
-                    {isUserRated ? '✏️ Modify Rating' : '⭐ Submit Rating'}
-                  </Button>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-      ) : (
-        /* TABLE VIEW */
-        <Card style={{ padding: 0, overflow: 'hidden', marginBottom: '1.5rem' }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.875rem' }}>
+                  {/* Rating CTA Button */}
+                  <div>
+                    <Button
+                      variant={isUserRated ? 'secondary' : 'primary'}
+                      onClick={() => setSelectedStoreForRating(s)}
+                      style={{ width: '100%' }}
+                    >
+                      {isUserRated ? '✏️ Modify Rating' : '⭐ Submit Rating'}
+                    </Button>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        ) : (
+          /* TABLE VIEW */
+          <div className="clay-table-wrapper" style={{ marginBottom: '2.5rem' }}>
+            <table className="clay-table">
               <thead>
-                <tr style={{ background: 'rgba(255, 255, 255, 0.02)', borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}>
-                  <th
-                    style={{ padding: '0.85rem 1rem', cursor: 'pointer' }}
-                    onClick={() => handleSortToggle('name')}
-                  >
+                <tr>
+                  <th onClick={() => handleSortToggle('name')} style={{ cursor: 'pointer' }}>
                     Store Name {sort.sortBy === 'name' ? (sort.sortOrder === 'ASC' ? '▲' : '▼') : ''}
                   </th>
-                  <th
-                    style={{ padding: '0.85rem 1rem', cursor: 'pointer' }}
-                    onClick={() => handleSortToggle('address')}
-                  >
+                  <th onClick={() => handleSortToggle('address')} style={{ cursor: 'pointer' }}>
                     Address {sort.sortBy === 'address' ? (sort.sortOrder === 'ASC' ? '▲' : '▼') : ''}
                   </th>
-                  <th
-                    style={{ padding: '0.85rem 1rem', cursor: 'pointer' }}
-                    onClick={() => handleSortToggle('rating')}
-                  >
-                    Overall Rating {sort.sortBy === 'rating' ? (sort.sortOrder === 'ASC' ? '▲' : '▼') : ''}
+                  <th onClick={() => handleSortToggle('rating')} style={{ cursor: 'pointer' }}>
+                    Community Score {sort.sortBy === 'rating' ? (sort.sortOrder === 'ASC' ? '▲' : '▼') : ''}
                   </th>
-                  <th
-                    style={{ padding: '0.85rem 1rem', cursor: 'pointer' }}
-                    onClick={() => handleSortToggle('user_rating')}
-                  >
+                  <th onClick={() => handleSortToggle('user_rating')} style={{ cursor: 'pointer' }}>
                     Your Rating {sort.sortBy === 'user_rating' ? (sort.sortOrder === 'ASC' ? '▲' : '▼') : ''}
                   </th>
-                  <th style={{ padding: '0.85rem 1rem', textAlign: 'right' }}>Actions</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -480,53 +429,47 @@ export const UserStoreBrowsePage = () => {
                   const isUserRated = s.user_rating !== null && s.user_rating !== undefined;
 
                   return (
-                    <tr
-                      key={s.id}
-                      style={{
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
-                        transition: 'background 0.15s ease',
-                      }}
-                    >
-                      <td style={{ padding: '0.85rem 1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                    <tr key={s.id}>
+                      <td style={{ fontWeight: 800, color: 'var(--clay-text-primary)' }}>
                         {s.name}
                       </td>
-                      <td style={{ padding: '0.85rem 1rem', color: 'var(--text-muted)' }}>
+                      <td style={{ color: 'var(--clay-text-muted)' }}>
                         {s.address}
                       </td>
-                      <td style={{ padding: '0.85rem 1rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
                           {hasReviews ? (
                             <>
-                              <span style={{ color: '#f59e0b', fontWeight: 700 }}>
+                              <span style={{ color: 'var(--clay-warning)', fontWeight: 900 }}>
                                 ★ {overallAvg.toFixed(2)}
                               </span>
-                              <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
+                              <span style={{ fontSize: '0.8rem', color: 'var(--clay-text-dim)', fontWeight: 600 }}>
                                 ({reviewCount})
                               </span>
                             </>
                           ) : (
-                            <span style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>
-                              No ratings yet
+                            <span style={{ color: 'var(--clay-text-dim)', fontSize: '0.85rem' }}>
+                              No ratings
                             </span>
                           )}
                         </div>
                       </td>
-                      <td style={{ padding: '0.85rem 1rem' }}>
+                      <td>
                         {isUserRated ? (
-                          <span style={{ color: 'var(--accent-success)', fontWeight: 600, fontSize: '0.8rem' }}>
+                          <span className="clay-badge clay-badge-green">
                             ⭐ {s.user_rating} / 5 Stars
                           </span>
                         ) : (
-                          <span style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>
+                          <span style={{ color: 'var(--clay-text-dim)', fontSize: '0.85rem' }}>
                             ⚪ Not Rated
                           </span>
                         )}
                       </td>
-                      <td style={{ padding: '0.85rem 1rem', textAlign: 'right' }}>
+                      <td style={{ textAlign: 'right' }}>
                         <Button
                           variant={isUserRated ? 'secondary' : 'primary'}
+                          size="sm"
                           onClick={() => setSelectedStoreForRating(s)}
-                          style={{ fontSize: '0.75rem', padding: '0.3rem 0.65rem' }}
                         >
                           {isUserRated ? '✏️ Modify' : '⭐ Submit'}
                         </Button>
@@ -537,31 +480,31 @@ export const UserStoreBrowsePage = () => {
               </tbody>
             </table>
           </div>
-        </Card>
-      )}
+        )}
 
-      {/* Pagination Footer */}
-      {stores.length > 0 && (
-        <Card style={{ padding: 0, overflow: 'hidden' }}>
-          <Pagination
-            currentPage={pagination.page}
-            totalPages={pagination.totalPages}
-            pageSize={pagination.limit}
-            totalItems={pagination.totalItems}
-            onPageChange={(newPage) => setPagination((prev) => ({ ...prev, page: newPage }))}
-            onPageSizeChange={(newSize) => setPagination((prev) => ({ ...prev, limit: newSize, page: 1 }))}
-            pageSizeOptions={[3, 6, 12, 24]}
-          />
-        </Card>
-      )}
+        {/* Pagination Footer */}
+        {stores.length > 0 && (
+          <div className="clay-table-wrapper" style={{ borderRadius: 'var(--radius-clay-card)', overflow: 'hidden' }}>
+            <Pagination
+              currentPage={pagination.page}
+              totalPages={pagination.totalPages}
+              pageSize={pagination.limit}
+              totalItems={pagination.totalItems}
+              onPageChange={(newPage) => setPagination((prev) => ({ ...prev, page: newPage }))}
+              onPageSizeChange={(newSize) => setPagination((prev) => ({ ...prev, limit: newSize, page: 1 }))}
+              pageSizeOptions={[3, 6, 12, 24]}
+            />
+          </div>
+        )}
 
-      {/* Rate / Modify Store Modal */}
-      <RateStoreModal
-        isOpen={!!selectedStoreForRating}
-        onClose={() => setSelectedStoreForRating(null)}
-        store={selectedStoreForRating}
-        onRatingSubmitted={handleRatingSuccess}
-      />
+        {/* Rate / Modify Store Modal */}
+        <RateStoreModal
+          isOpen={!!selectedStoreForRating}
+          onClose={() => setSelectedStoreForRating(null)}
+          store={selectedStoreForRating}
+          onRatingSubmitted={handleRatingSuccess}
+        />
+      </div>
     </div>
   );
 };

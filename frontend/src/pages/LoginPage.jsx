@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
+import { Alert } from '../components/common/Alert';
 import { useAuth } from '../context/AuthContext';
 import { ROLES, ROLE_LABELS } from '../constants/roles';
 
@@ -21,7 +22,6 @@ export const LoginPage = ({ onNavigate }) => {
     setLoading(false);
 
     if (result.success) {
-      // Direct user to role dashboard
       onNavigate('dashboard');
     } else {
       setError(result.message || 'Login failed. Please check your credentials.');
@@ -44,118 +44,113 @@ export const LoginPage = ({ onNavigate }) => {
   };
 
   return (
-    <div className="fade-in" style={{ maxWidth: '480px', margin: '2rem auto' }}>
-      <Card>
-        <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
+    <div className="clay-page">
+      <div className="clay-container" style={{ maxWidth: '520px' }}>
+        <Card>
+          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+            <div className="clay-orb clay-orb-purple" style={{ margin: '0 auto 1.25rem', width: '60px', height: '60px', fontSize: '1.6rem' }}>
+              🔑
+            </div>
+            <h2 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '0.35rem' }}>
+              Welcome Back
+            </h2>
+            <p style={{ color: 'var(--clay-text-muted)', fontSize: '0.95rem' }}>
+              Sign in to manage ratings, stores, and analytics
+            </p>
+          </div>
+
+          {error && <Alert type="error" message={error} onClose={() => setError('')} />}
+
+          <form onSubmit={handleSubmit}>
+            <Input
+              label="Email Address"
+              id="login-email"
+              type="email"
+              placeholder="admin@storerating.com or your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+
+            <Input
+              label="Password"
+              id="login-password"
+              type="password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+
+            <Button
+              variant="primary"
+              type="submit"
+              loading={loading}
+              style={{ width: '100%', marginTop: '0.5rem', minHeight: '56px' }}
+            >
+              Sign In &rarr;
+            </Button>
+          </form>
+
+          {/* Quick Demo Pre-fill Helpers */}
           <div
             style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '12px',
-              background: 'var(--accent-gradient)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '1rem',
+              marginTop: '2rem',
+              borderTop: '2px solid rgba(124, 58, 237, 0.08)',
+              paddingTop: '1.5rem',
             }}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
-              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" />
-            </svg>
-          </div>
-          <h2 style={{ fontSize: '1.75rem', marginBottom: '0.35rem' }}>Sign In</h2>
-        </div>
-
-        {error && (
-          <div
-            style={{
-              background: 'rgba(239, 68, 68, 0.15)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              color: '#f87171',
-              padding: '0.75rem 1rem',
-              borderRadius: 'var(--radius-md)',
-              marginBottom: '1.25rem',
-              fontSize: '0.85rem',
-            }}
-          >
-            ⚠️ {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          <Input
-            label="Email Address"
-            id="login-email"
-            type="email"
-            placeholder="admin@storerating.com or your email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-
-          <Input
-            label="Password"
-            id="login-password"
-            type="password"
-            placeholder="Enter password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-
-          <Button
-            variant="primary"
-            type="submit"
-            loading={loading}
-            style={{ width: '100%', marginTop: '0.5rem', padding: '0.75rem' }}
-          >
-            Sign In &rarr;
-          </Button>
-        </form>
-
-        {/* Quick Demo Pre-fill Helpers */}
-        <div style={{ marginTop: '2rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '1.25rem' }}>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', textTransform: 'uppercase', fontWeight: 700, display: 'block', marginBottom: '0.75rem' }}>
-            Quick Role Demo Autofill
-          </span>
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              onClick={() => setDemoRole(ROLES.SYSTEM_ADMIN)}
-              className="btn btn-secondary"
-              style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
+            <span
+              style={{
+                fontSize: '0.8rem',
+                color: 'var(--clay-text-dim)',
+                textTransform: 'uppercase',
+                fontWeight: 900,
+                fontFamily: 'var(--font-heading)',
+                letterSpacing: '0.04em',
+                display: 'block',
+                marginBottom: '0.85rem',
+                textAlign: 'center',
+              }}
             >
-              🛡️ {ROLE_LABELS[ROLES.SYSTEM_ADMIN]}
-            </button>
-            <button
-              type="button"
-              onClick={() => setDemoRole(ROLES.STORE_OWNER)}
-              className="btn btn-secondary"
-              style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
-            >
-              🏪 {ROLE_LABELS[ROLES.STORE_OWNER]}
-            </button>
-            <button
-              type="button"
-              onClick={() => setDemoRole(ROLES.NORMAL_USER)}
-              className="btn btn-secondary"
-              style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
-            >
-              ⭐ {ROLE_LABELS[ROLES.NORMAL_USER]}
-            </button>
+              QUICK ROLE DEMO AUTOFILL
+            </span>
+            <div style={{ display: 'flex', gap: '0.65rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => setDemoRole(ROLES.SYSTEM_ADMIN)}
+                className="clay-btn clay-btn-secondary clay-btn-sm"
+              >
+                🛡️ Admin
+              </button>
+              <button
+                type="button"
+                onClick={() => setDemoRole(ROLES.STORE_OWNER)}
+                className="clay-btn clay-btn-secondary clay-btn-sm"
+              >
+                🏪 Store Owner
+              </button>
+              <button
+                type="button"
+                onClick={() => setDemoRole(ROLES.NORMAL_USER)}
+                className="clay-btn clay-btn-secondary clay-btn-sm"
+              >
+                ⭐ Normal User
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-          Don't have an account yet?{' '}
-          <span
-            onClick={() => onNavigate('register')}
-            style={{ color: 'var(--accent-primary)', cursor: 'pointer', fontWeight: 600 }}
-          >
-            Register here
-          </span>
-        </div>
-      </Card>
+          <div style={{ textAlign: 'center', marginTop: '1.75rem', fontSize: '0.95rem', color: 'var(--clay-text-muted)' }}>
+            Don't have an account yet?{' '}
+            <span
+              onClick={() => onNavigate('register')}
+              style={{ color: 'var(--clay-accent-primary)', cursor: 'pointer', fontWeight: 800, fontFamily: 'var(--font-heading)' }}
+            >
+              Register here
+            </span>
+          </div>
+        </Card>
+      </div>
     </div>
   );
 };
