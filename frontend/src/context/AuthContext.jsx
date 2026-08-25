@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authService } from '../services/authService';
 
 const AuthContext = createContext(null);
@@ -6,103 +6,142 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
-      const savedUser = localStorage.getItem('store_rating_user');
-      return savedUser ? JSON.parse(savedUser) : null;
+      const stored = localStorage.getItem('store_rating_user');
+      return stored ? JSON.parse(stored) : null;
     } catch {
       return null;
     }
   });
-  const [token, setToken] = useState(() => localStorage.getItem('store_rating_token') || null);
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Synchronize authentication state on initial mount
+  const [token, setToken] = useState(() => localStorage.getItem('store_rating_token') || null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Synchronize authentication profile on mount
   useEffect(() => {
     const initAuth = async () => {
-      const storedToken = localStorage.getItem('store_rating_token');
-      if (storedToken) {
+      const savedToken = localStorage.getItem('store_rating_token');
+      if (savedToken) {
         try {
-          const res = await authService.getCurrentUser();
-          if (res.data) {
+          const res = await authService.getProfile();
+          if (res && res.data) {
             setUser(res.data);
             localStorage.setItem('store_rating_user', JSON.stringify(res.data));
           }
         } catch (err) {
-          console.warn('Session verification failed, logging out:', err.message);
+          // Token expired or invalid
+          console.warn('Session expired. Logging out.');
           logout();
         }
       }
-      setIsLoading(false);
+      setLoading(false);
     };
 
-    const handleUnauthorized = () => {
-      logout();
-    };
-
-    window.addEventListener('auth:unauthorized', handleUnauthorized);
     initAuth();
 
-    return () => {
-      window.removeEventListener('auth:unauthorized', handleUnauthorized);
+    // Event listener for 401 interceptor trigger
+    const handleAuthExpired = () => {
+      setUser(null);
+      setToken(null);
     };
+
+    window.addEventListener('auth:expired', handleAuthExpired);
+    return () => window.removeEventListener('auth:expired', handleAuthExpired);
   }, []);
 
+  /**
+   * Universal Login Handler
+   */
   const login = async (email, password) => {
-    setIsLoading(true);
+    setLoading(true);
+    setError(null);
     try {
-      const response = await authService.login({ email, password });
-      const { user: loggedInUser, token: authToken } = response.data;
+      const res = await authService.login(email, password);
+      const { user: userData, token: jwtToken } = res.data;
 
-      setUser(loggedInUser);
-      setToken(authToken);
-      localStorage.setItem('store_rating_token', authToken);
-      localStorage.setItem('store_rating_user', JSON.stringify(loggedInUser));
-      return { success: true, user: loggedInUser };
-    } catch (error) {
-      return { success: false, message: error.message };
-    } finally {
-      setIsLoading(false);
+      setUser(userData);
+      setToken(jwtToken);
+
+      localStorage.setItem('store_rating_token', jwtToken);
+      localStorage.setItem('store_rating_user', JSON.stringify(userData));
+
+      setLoading(false);
+      return { success: true, user: userData, role: userData.role };
+    } catch (err) {
+      setLoading(false);
+      const message = err.response?.data?.message || 'Login failed. Please verify your credentials.';
+      setError(message);
+      return { success: false, message };
     }
   };
 
+  /**
+   * Normal User Registration Handler
+   */
   const register = async (userData) => {
-    setIsLoading(true);
+    setLoading(true);
+    setError(null);
     try {
-      const response = await authService.register(userData);
-      const { user: registeredUser, token: authToken } = response.data;
+      const res = await authService.register(userData);
+      const { user: newUser, token: jwtToken } = res.data;
 
-      setUser(registeredUser);
-      setToken(authToken);
-      localStorage.setItem('store_rating_token', authToken);
-      localStorage.setItem('store_rating_user', JSON.stringify(registeredUser));
-      return { success: true, user: registeredUser };
-    } catch (error) {
-      return { success: false, message: error.message };
-    } finally {
-      setIsLoading(false);
+      setUser(newUser);
+      setToken(jwtToken);
+
+      localStorage.setItem('store_rating_token', jwtToken);
+      localStorage.setItem('store_rating_user', JSON.stringify(newUser));
+
+      setLoading(false);
+      return { success: true, user: newUser, role: newUser.role };
+    } catch (err) {
+      setLoading(false);
+      const message = err.response?.data?.message || 'Registration failed.';
+      const errors = err.response?.data?.errors || null;
+      setError(message);
+      return { success: false, message, errors };
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('store_rating_token');
-    localStorage.removeItem('store_rating_user');
-  };
+  /**
+   * Logout Handler
+   */
+  const logout = useCallback(async () => {
+    try {
+      await authService.logout();
+    } catch {
+      // Ignore network errors
+    } finally {
+      setUser(null);
+      setToken(null);
+      localStorage.removeItem('store_rating_token');
+      localStorage.removeItem('store_rating_user');
+    }
+  }, []);
 
-  const hasRole = (...allowedRoles) => {
-    if (!user || !user.role) return false;
-    return allowedRoles.includes(user.role);
+  /**
+   * Update Password Handler
+   */
+  const updatePassword = async (currentPassword, newPassword) => {
+    try {
+      const res = await authService.updatePassword(currentPassword, newPassword);
+      return { success: true, message: res.message };
+    } catch (err) {
+      const message = err.response?.data?.message || 'Failed to update password.';
+      return { success: false, message };
+    }
   };
 
   const value = {
     user,
     token,
+    role: user?.role || null,
     isAuthenticated: !!token && !!user,
-    isLoading,
+    loading,
+    error,
     login,
     register,
     logout,
-    hasRole,
+    updatePassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

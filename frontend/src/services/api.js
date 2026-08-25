@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
-const api = axios.create({
+export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
@@ -10,7 +10,7 @@ const api = axios.create({
   timeout: 10000,
 });
 
-// Attach JWT token to requests if present in localStorage
+// Request Interceptor: Attach JWT token if present
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('store_rating_token');
@@ -22,25 +22,22 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Global response interceptor for unified error formatting
+// Response Interceptor: Centralized Error Handler
 api.interceptors.response.use(
-  (response) => response.data,
+  (response) => response,
   (error) => {
-    const message =
-      error.response?.data?.message ||
-      error.response?.data?.errors?.[0]?.message ||
-      error.response?.data?.error ||
-      error.message ||
-      'Network request failed';
+    const status = error.response ? error.response.status : null;
 
-    // If 401 Unauthorized, token might be expired
-    if (error.response?.status === 401 && localStorage.getItem('store_rating_token')) {
-      localStorage.removeItem('store_rating_token');
-      localStorage.removeItem('store_rating_user');
-      window.dispatchEvent(new Event('auth:unauthorized'));
+    if (status === 401) {
+      const currentToken = localStorage.getItem('store_rating_token');
+      if (currentToken) {
+        localStorage.removeItem('store_rating_token');
+        localStorage.removeItem('store_rating_user');
+        window.dispatchEvent(new CustomEvent('auth:expired'));
+      }
     }
 
-    return Promise.reject(new Error(message));
+    return Promise.reject(error);
   }
 );
 
