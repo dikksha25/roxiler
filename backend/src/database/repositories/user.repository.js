@@ -1,14 +1,12 @@
 const BaseRepository = require('./base.repository');
 const { ROLES } = require('../../constants/roles.constant');
 
-const DEV_PASSWORD_HASH = '$2a$10$w09Z9K0Nq0mQ8.9j1h0q8O/H/J/K/L/M/N/O/P/Q/R/S/T/U/V/W.';
-
 const DEV_SEEDED_USERS = [
   {
     id: 1,
     name: 'Alexander Wright',
     email: 'admin@storerating.com',
-    password_hash: DEV_PASSWORD_HASH,
+    password_hash: null,
     address: '100 Innovation Way, Suite 500, Tech Metropolis',
     role: ROLES.SYSTEM_ADMIN,
     created_at: new Date('2026-01-01T00:00:00.000Z'),
@@ -18,7 +16,7 @@ const DEV_SEEDED_USERS = [
     id: 2,
     name: 'Marcus Vance',
     email: 'owner.marcus@freshmart.com',
-    password_hash: DEV_PASSWORD_HASH,
+    password_hash: null,
     address: '452 Marketplace Blvd, Downtown Plaza',
     role: ROLES.STORE_OWNER,
     created_at: new Date('2026-01-02T00:00:00.000Z'),
@@ -28,7 +26,7 @@ const DEV_SEEDED_USERS = [
     id: 3,
     name: 'Elena Rostova',
     email: 'owner.elena@nexuscoffee.com',
-    password_hash: DEV_PASSWORD_HASH,
+    password_hash: null,
     address: '88 Artisan Alley, Heritage Square',
     role: ROLES.STORE_OWNER,
     created_at: new Date('2026-01-03T00:00:00.000Z'),
@@ -38,7 +36,7 @@ const DEV_SEEDED_USERS = [
     id: 4,
     name: 'Sarah Jenkins',
     email: 'sarah.jenkins@example.com',
-    password_hash: DEV_PASSWORD_HASH,
+    password_hash: null,
     address: '742 Evergreen Terrace, Sector 4',
     role: ROLES.NORMAL_USER,
     created_at: new Date('2026-01-04T00:00:00.000Z'),
@@ -48,7 +46,7 @@ const DEV_SEEDED_USERS = [
     id: 5,
     name: 'David Kim',
     email: 'david.kim@example.com',
-    password_hash: DEV_PASSWORD_HASH,
+    password_hash: null,
     address: '12 Elm Street, Apt 3B',
     role: ROLES.NORMAL_USER,
     created_at: new Date('2026-01-05T00:00:00.000Z'),

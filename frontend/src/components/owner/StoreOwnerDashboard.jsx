@@ -6,11 +6,13 @@ import { Button } from '../common/Button';
 import { Alert } from '../common/Alert';
 import { Spinner } from '../common/Spinner';
 import { Pagination } from '../common/Pagination';
+import { ChangePasswordModal } from '../common/ChangePasswordModal';
 import { useDebounce } from '../../hooks/useDebounce';
 
 export const StoreOwnerDashboard = () => {
   const [statsData, setStatsData] = useState(null);
   const [selectedStoreId, setSelectedStoreId] = useState(null); // null = all / aggregate
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   // Ratings Table state
   const [ratings, setRatings] = useState([]);
@@ -286,6 +288,15 @@ export const StoreOwnerDashboard = () => {
             style={{ fontSize: '0.85rem' }}
           >
             🔄 Refresh Data
+          </Button>
+
+          {/* Change Password Modal Launcher */}
+          <Button
+            variant="primary"
+            onClick={() => setShowPasswordModal(true)}
+            style={{ fontSize: '0.85rem' }}
+          >
+            🔒 Change Password
           </Button>
         </div>
       </div>
@@ -717,6 +728,12 @@ export const StoreOwnerDashboard = () => {
           </div>
         )}
       </Card>
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+      />
     </div>
   );
 };

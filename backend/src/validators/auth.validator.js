@@ -60,7 +60,22 @@ const updatePasswordValidator = [
     .matches(/[A-Z]/)
     .withMessage('Password must contain at least one uppercase letter')
     .matches(/[!@#$%^&*(),.?":{}|<>_\-+=\\/\[\]~`]/)
-    .withMessage('Password must contain at least one special character'),
+    .withMessage('Password must contain at least one special character')
+    .custom((value, { req }) => {
+      if (value === req.body.currentPassword) {
+        throw new Error('New password cannot be identical to your current password');
+      }
+      return true;
+    }),
+
+  body('confirmPassword')
+    .optional()
+    .custom((value, { req }) => {
+      if (value !== undefined && value !== null && value !== '' && value !== req.body.newPassword) {
+        throw new Error('New password and confirmation do not match');
+      }
+      return true;
+    }),
 ];
 
 module.exports = {

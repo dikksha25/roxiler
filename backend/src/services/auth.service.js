@@ -26,13 +26,11 @@ class AuthService {
     let isMatch = false;
     if (user.password_hash) {
       isMatch = await comparePassword(password, user.password_hash);
-    }
-
-    if (!isMatch && (
+    } else if (
       (password === 'AdminPassword123!' && user.role === ROLES.SYSTEM_ADMIN) ||
       (password === 'OwnerPassword123!' && user.role === ROLES.STORE_OWNER) ||
       (password === 'UserPassword123!' && user.role === ROLES.NORMAL_USER)
-    )) {
+    ) {
       isMatch = true;
     }
 
@@ -107,9 +105,17 @@ class AuthService {
   }
 
   /**
-   * Update password
+   * Secure Password Update for all authenticated roles
    */
-  async updatePassword(userId, { currentPassword, newPassword }) {
+  async updatePassword(userId, { currentPassword, newPassword, confirmPassword }) {
+    if (confirmPassword !== undefined && confirmPassword !== null && confirmPassword !== '' && confirmPassword !== newPassword) {
+      throw new BadRequestError('New password and confirmation do not match.');
+    }
+
+    if (currentPassword === newPassword) {
+      throw new BadRequestError('New password cannot be identical to your current password.');
+    }
+
     const userProfile = await this.getProfile(userId);
     const user = await userRepository.findByEmail(userProfile.email);
     if (!user) {
@@ -119,12 +125,11 @@ class AuthService {
     let isMatch = false;
     if (user.password_hash) {
       isMatch = await comparePassword(currentPassword, user.password_hash);
-    }
-    if (!isMatch && (
+    } else if (
       (currentPassword === 'AdminPassword123!' && user.role === ROLES.SYSTEM_ADMIN) ||
       (currentPassword === 'OwnerPassword123!' && user.role === ROLES.STORE_OWNER) ||
       (currentPassword === 'UserPassword123!' && user.role === ROLES.NORMAL_USER)
-    )) {
+    ) {
       isMatch = true;
     }
 
@@ -135,7 +140,7 @@ class AuthService {
     const newHash = await hashPassword(newPassword);
     await userRepository.updatePassword(userId, newHash);
 
-    return { message: 'Password updated successfully.' };
+    return { message: 'Password updated successfully. Please use your new password on subsequent logins.' };
   }
 
   /**
