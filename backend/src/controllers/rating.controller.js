@@ -16,6 +16,19 @@ const submitRating = asyncHandler(async (req, res) => {
   return ApiResponse.created(res, MESSAGES.RATING_SUBMITTED || 'Rating submitted successfully', createdRating);
 });
 
+const modifyRatingByStoreId = asyncHandler(async (req, res) => {
+  const { storeId } = req.params;
+  const { rating, ratingValue, comment } = req.body;
+
+  const updated = await ratingService.modifyRatingByStoreId(req.user.id, storeId, {
+    rating,
+    ratingValue,
+    comment,
+  });
+
+  return ApiResponse.success(res, MESSAGES.RATING_UPDATED || 'Rating updated successfully', updated);
+});
+
 const updateRating = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { rating, ratingValue, comment } = req.body;
@@ -41,6 +54,7 @@ const getStoreRatings = asyncHandler(async (req, res) => {
 
 module.exports = {
   submitRating,
+  modifyRatingByStoreId,
   updateRating,
   getMyRatings,
   getStoreRatings,

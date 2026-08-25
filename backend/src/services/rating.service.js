@@ -46,7 +46,46 @@ class RatingService {
   }
 
   /**
-   * Update an existing rating (NORMAL_USER)
+   * Modify an existing rating for a store (NORMAL_USER)
+   * Target identified by store ID (PUT /api/v1/ratings/:storeId)
+   */
+  async modifyRatingByStoreId(userId, storeId, { rating, ratingValue, comment }) {
+    const targetStoreId = parseInt(storeId, 10);
+    const targetRatingVal = parseInt(rating !== undefined ? rating : ratingValue, 10);
+
+    if (isNaN(targetStoreId) || targetStoreId < 1) {
+      throw new BadRequestError('Valid store ID parameter is required.');
+    }
+
+    if (isNaN(targetRatingVal) || targetRatingVal < 1 || targetRatingVal > 5) {
+      throw new BadRequestError('Rating must be an integer between 1 and 5.');
+    }
+
+    // 1. Verify store exists
+    const store = await storeRepository.findDetailById(targetStoreId);
+    if (!store) {
+      throw new NotFoundError(`Store with ID ${targetStoreId} was not found.`);
+    }
+
+    // 2. Check if user has an existing rating for this store
+    const existingRating = await ratingRepository.findByUserAndStore(userId, targetStoreId);
+    if (!existingRating) {
+      throw new NotFoundError(
+        `No existing rating found for store ID ${targetStoreId}. Please submit a rating first.`
+      );
+    }
+
+    // 3. Update the rating
+    const updated = await ratingRepository.updateByUserAndStore(userId, targetStoreId, {
+      ratingValue: targetRatingVal,
+      comment: comment !== undefined ? (comment ? comment.trim() : null) : undefined,
+    });
+
+    return updated;
+  }
+
+  /**
+   * Update an existing rating by rating ID (NORMAL_USER)
    */
   async updateRating(userId, ratingIdOrStoreId, { rating, ratingValue, comment }) {
     const targetRatingVal = rating !== undefined ? parseInt(rating, 10) : (ratingValue !== undefined ? parseInt(ratingValue, 10) : undefined);

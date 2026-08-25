@@ -90,6 +90,36 @@ class RatingRepository extends BaseRepository {
     }
   }
 
+  async updateByUserAndStore(userId, storeId, { ratingValue, comment }) {
+    const uId = parseInt(userId, 10);
+    const sId = parseInt(storeId, 10);
+    const val = parseInt(ratingValue, 10);
+
+    try {
+      const res = await this.query(
+        `UPDATE ratings
+         SET rating_value = COALESCE($1, rating_value),
+             comment = COALESCE($2, comment),
+             updated_at = NOW()
+         WHERE user_id = $3 AND store_id = $4
+         RETURNING id, user_id, store_id, rating_value, comment, created_at, updated_at`,
+        [val, comment !== undefined ? comment : null, uId, sId]
+      );
+      return res.rows[0] || null;
+    } catch (err) {
+      const existing = this.inMemoryRatings.find(
+        (r) => r.user_id === uId && r.store_id === sId
+      );
+      if (existing) {
+        existing.rating_value = val;
+        if (comment !== undefined) existing.comment = comment;
+        existing.updated_at = new Date();
+        return { ...existing };
+      }
+      return null;
+    }
+  }
+
   async update(id, { ratingValue, comment }) {
     const rId = parseInt(id, 10);
     const val = ratingValue !== undefined ? parseInt(ratingValue, 10) : null;

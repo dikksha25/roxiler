@@ -1,4 +1,5 @@
 const BaseRepository = require('./base.repository');
+const ratingRepository = require('./rating.repository');
 
 const DEV_SEEDED_STORES = [
   {
@@ -45,13 +46,6 @@ const DEV_SEEDED_STORES = [
   },
 ];
 
-// Seeded ratings map for in-memory dev mode
-const DEV_SEEDED_USER_RATINGS = [
-  { id: 1, user_id: 4, store_id: 1, rating_value: 5, comment: 'Exceptional fresh organic produce and friendly staff!' },
-  { id: 2, user_id: 4, store_id: 2, rating_value: 5, comment: 'Best pour-over coffee in the city.' },
-  { id: 3, user_id: 5, store_id: 1, rating_value: 4, comment: 'Great selection, parking can get busy.' },
-];
-
 const STORE_SORT_ALLOWLIST = {
   name: 's.name',
   email: 's.email',
@@ -79,7 +73,6 @@ class StoreRepository extends BaseRepository {
   constructor() {
     super('stores');
     this.inMemoryStores = [...DEV_SEEDED_STORES];
-    this.inMemoryRatings = [...DEV_SEEDED_USER_RATINGS];
   }
 
   async findDetailById(id) {
@@ -101,7 +94,19 @@ class StoreRepository extends BaseRepository {
       return res.rows[0] || null;
     } catch (err) {
       const found = this.inMemoryStores.find((s) => s.id === storeId);
-      return found ? { ...found } : null;
+      if (!found) return null;
+
+      const storeRatings = ratingRepository.inMemoryRatings.filter((r) => r.store_id === storeId);
+      const avg = storeRatings.length > 0
+        ? (storeRatings.reduce((acc, r) => acc + r.rating_value, 0) / storeRatings.length).toFixed(2)
+        : found.average_rating || '0.00';
+
+      return {
+        ...found,
+        average_rating: avg,
+        overall_rating: avg,
+        rating_count: storeRatings.length,
+      };
     }
   }
 
@@ -263,7 +268,19 @@ class StoreRepository extends BaseRepository {
       const dataRes = await this.query(selectSql, [...params, limit, offset]);
       return { items: dataRes.rows, total };
     } catch (err) {
-      let filtered = [...this.inMemoryStores];
+      let filtered = this.inMemoryStores.map((store) => {
+        const storeRatings = ratingRepository.inMemoryRatings.filter((r) => r.store_id === store.id);
+        const avg = storeRatings.length > 0
+          ? (storeRatings.reduce((acc, r) => acc + r.rating_value, 0) / storeRatings.length).toFixed(2)
+          : store.average_rating || '0.00';
+
+        return {
+          ...store,
+          average_rating: avg,
+          overall_rating: avg,
+          rating_count: storeRatings.length,
+        };
+      });
 
       if (ownerId) {
         filtered = filtered.filter((s) => s.owner_id === parseInt(ownerId, 10));
@@ -383,9 +400,15 @@ class StoreRepository extends BaseRepository {
       return { items: dataRes.rows, total };
     } catch (err) {
       let filtered = this.inMemoryStores.map((store) => {
-        const userRatingRecord = this.inMemoryRatings.find(
+        const storeRatings = ratingRepository.inMemoryRatings.filter((r) => r.store_id === store.id);
+        const userRatingRecord = ratingRepository.inMemoryRatings.find(
           (r) => r.store_id === store.id && r.user_id === currentUserId
         );
+
+        const avg = storeRatings.length > 0
+          ? (storeRatings.reduce((acc, r) => acc + r.rating_value, 0) / storeRatings.length).toFixed(2)
+          : store.average_rating || '0.00';
+
         return {
           id: store.id,
           name: store.name,
@@ -393,9 +416,9 @@ class StoreRepository extends BaseRepository {
           address: store.address,
           created_at: store.created_at,
           updated_at: store.updated_at,
-          overall_rating: store.overall_rating || store.average_rating || '0.00',
-          average_rating: store.average_rating || store.overall_rating || '0.00',
-          rating_count: store.rating_count || 0,
+          overall_rating: avg,
+          average_rating: avg,
+          rating_count: storeRatings.length,
           user_rating: userRatingRecord ? userRatingRecord.rating_value : null,
           my_rating: userRatingRecord ? userRatingRecord.rating_value : null,
           my_comment: userRatingRecord ? userRatingRecord.comment : null,
