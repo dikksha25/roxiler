@@ -12,6 +12,7 @@
     "db:reset": "node src/database/scripts/reset.js",
     "db:setup": "node src/database/scripts/setup.js",
     "db:init": "node src/database/scripts/setup.js",
+    "test": "node tests/runAllTests.js",
     "lint": "eslint src/"
   },
   "keywords": ["express", "postgresql", "jwt", "store-rating", "api"],
