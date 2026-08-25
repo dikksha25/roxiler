@@ -77,6 +77,36 @@ class StoreService {
   }
 
   /**
+   * Browse stores for NORMAL_USER, resolving overall rating AND user's own submitted rating
+   */
+  async browseStoresForUser(userId, parsedQuery) {
+    const {
+      limit,
+      offset,
+      page,
+      search,
+      sortBy,
+      sortOrder,
+      name,
+      address,
+    } = parsedQuery;
+
+    const { items, total } = await storeRepository.findPaginatedForUser(userId, {
+      search,
+      name,
+      address,
+      sortBy,
+      sortOrder,
+      limit,
+      offset,
+    });
+
+    const pagination = PaginationUtil.buildMeta(total, page, limit);
+
+    return { stores: items, pagination };
+  }
+
+  /**
    * Get store detail with dynamic overall rating calculation and owner details
    */
   async getStoreById(storeId) {

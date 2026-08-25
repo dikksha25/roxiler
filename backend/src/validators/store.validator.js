@@ -112,6 +112,40 @@ const listStoresValidator = [
     .withMessage('ownerId must be a positive integer'),
 ];
 
+const browseStoresForUserValidator = [
+  query('page')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Page must be an integer greater than 0'),
+
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage('Limit must be between 1 and 100'),
+
+  query('sortBy')
+    .optional()
+    .isIn(['name', 'address', 'rating', 'average_rating', 'overall_rating', 'user_rating', 'my_rating', 'created_at'])
+    .withMessage('sortBy must be one of: [name, address, rating, average_rating, overall_rating, user_rating, my_rating, created_at]'),
+
+  query('sortOrder')
+    .optional()
+    .isIn(['asc', 'desc', 'ASC', 'DESC'])
+    .withMessage('sortOrder must be asc or desc'),
+
+  query('name')
+    .optional()
+    .trim(),
+
+  query('address')
+    .optional()
+    .trim(),
+
+  query('search')
+    .optional()
+    .trim(),
+];
+
 const getStoreByIdValidator = [
   param('id')
     .isInt({ min: 1 })
@@ -122,5 +156,6 @@ module.exports = {
   createStoreValidator,
   updateStoreValidator,
   listStoresValidator,
+  browseStoresForUserValidator,
   getStoreByIdValidator,
 };

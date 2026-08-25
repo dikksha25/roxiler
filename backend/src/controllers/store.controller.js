@@ -25,6 +25,19 @@ const getStores = asyncHandler(async (req, res) => {
   return ApiResponse.success(res, MESSAGES.STORES_RETRIEVED, { stores }, 200, pagination);
 });
 
+const browseStoresForUser = asyncHandler(async (req, res) => {
+  const parsedQuery = QueryParamsUtil.parse(req.query, {
+    allowedSortFields: ['name', 'address', 'rating', 'average_rating', 'overall_rating', 'user_rating', 'my_rating', 'created_at'],
+    defaultSortBy: 'created_at',
+  });
+
+  parsedQuery.name = req.query.name || '';
+  parsedQuery.address = req.query.address || '';
+
+  const { stores, pagination } = await storeService.browseStoresForUser(req.user.id, parsedQuery);
+  return ApiResponse.success(res, 'User store directory retrieved successfully', { stores }, 200, pagination);
+});
+
 const getStoreById = asyncHandler(async (req, res) => {
   const storeId = parseInt(req.params.id, 10);
   const store = await storeService.getStoreById(storeId);
@@ -45,6 +58,7 @@ const updateStore = asyncHandler(async (req, res) => {
 module.exports = {
   createStore,
   getStores,
+  browseStoresForUser,
   getStoreById,
   getMyStores,
   updateStore,

@@ -4,6 +4,7 @@ const {
   createStoreValidator,
   updateStoreValidator,
   listStoresValidator,
+  browseStoresForUserValidator,
   getStoreByIdValidator,
 } = require('../../validators/store.validator');
 const validate = require('../../middleware/validate.middleware');
@@ -13,8 +14,14 @@ const { ROLES } = require('../../constants/roles.constant');
 
 const router = express.Router();
 
-// Public store directory & store detail
-router.get('/', validate(listStoresValidator), storeController.getStores);
+// Protected store browsing endpoint for NORMAL_USER (with personal rating resolution)
+router.get(
+  '/browse',
+  authenticate,
+  authorize(ROLES.NORMAL_USER),
+  validate(browseStoresForUserValidator),
+  storeController.browseStoresForUser
+);
 
 // Store Owner specific endpoint
 router.get(
@@ -24,6 +31,10 @@ router.get(
   storeController.getMyStores
 );
 
+// Public / General store directory
+router.get('/', validate(listStoresValidator), storeController.getStores);
+
+// Store details
 router.get('/:id', validate(getStoreByIdValidator), storeController.getStoreById);
 
 // System Administrator store creation & management

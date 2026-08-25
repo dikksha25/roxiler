@@ -45,7 +45,13 @@ const DEV_SEEDED_STORES = [
   },
 ];
 
-// Strict allowlist dictionary map to eliminate SQL injection risks
+// Seeded ratings map for in-memory dev mode
+const DEV_SEEDED_USER_RATINGS = [
+  { id: 1, user_id: 4, store_id: 1, rating_value: 5, comment: 'Exceptional fresh organic produce and friendly staff!' },
+  { id: 2, user_id: 4, store_id: 2, rating_value: 5, comment: 'Best pour-over coffee in the city.' },
+  { id: 3, user_id: 5, store_id: 1, rating_value: 4, comment: 'Great selection, parking can get busy.' },
+];
+
 const STORE_SORT_ALLOWLIST = {
   name: 's.name',
   email: 's.email',
@@ -53,6 +59,8 @@ const STORE_SORT_ALLOWLIST = {
   rating: 'average_rating',
   average_rating: 'average_rating',
   overall_rating: 'average_rating',
+  user_rating: 'my_r.rating_value',
+  my_rating: 'my_r.rating_value',
   created_at: 's.created_at',
 };
 
@@ -60,6 +68,7 @@ class StoreRepository extends BaseRepository {
   constructor() {
     super('stores');
     this.inMemoryStores = [...DEV_SEEDED_STORES];
+    this.inMemoryRatings = [...DEV_SEEDED_USER_RATINGS];
   }
 
   async findDetailById(id) {
@@ -172,7 +181,7 @@ class StoreRepository extends BaseRepository {
   }
 
   /**
-   * List stores with dynamic overall rating calculations, multi-field filtering, and SQL-safe sorting
+   * General store list with dynamic overall rating calculations
    */
   async findPaginated({
     search = '',
@@ -185,7 +194,6 @@ class StoreRepository extends BaseRepository {
     limit = 10,
     offset = 0,
   }) {
-    // Map to strict safe SQL identifier
     const safeSortExpression = STORE_SORT_ALLOWLIST[sortBy] || 's.created_at';
     const safeSortOrder = sortOrder && sortOrder.toString().toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
@@ -279,6 +287,139 @@ class StoreRepository extends BaseRepository {
         if (keyName === 'rating' || keyName === 'average_rating' || keyName === 'overall_rating') {
           valA = parseFloat(a.average_rating || 0);
           valB = parseFloat(b.average_rating || 0);
+        } else if (keyName === 'created_at') {
+          valA = new Date(valA).getTime();
+          valB = new Date(valB).getTime();
+        } else {
+          valA = valA.toString().toLowerCase();
+          valB = valB.toString().toLowerCase();
+        }
+        if (valA < valB) return isAsc ? -1 : 1;
+        if (valA > valB) return isAsc ? 1 : -1;
+        return 0;
+      });
+
+      const items = filtered.slice(offset, offset + limit);
+      return { items, total: filtered.length };
+    }
+  }
+
+  /**
+   * Protected store list for authenticated NORMAL_USER
+   * Resolves overall_rating AND the authenticated user's own submitted rating (user_rating / my_rating)
+   */
+  async findPaginatedForUser(userId, {
+    search = '',
+    name = '',
+    address = '',
+    sortBy = 'created_at',
+    sortOrder = 'DESC',
+    limit = 10,
+    offset = 0,
+  }) {
+    const currentUserId = parseInt(userId, 10);
+    const safeSortExpression = STORE_SORT_ALLOWLIST[sortBy] || 's.created_at';
+    const safeSortOrder = sortOrder && sortOrder.toString().toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
+    try {
+      let whereClauses = ['1=1'];
+      const params = [currentUserId];
+
+      if (name) {
+        params.push(`%${name.trim()}%`);
+        whereClauses.push(`s.name ILIKE $${params.length}`);
+      }
+
+      if (address) {
+        params.push(`%${address.trim()}%`);
+        whereClauses.push(`s.address ILIKE $${params.length}`);
+      }
+
+      if (search) {
+        params.push(`%${search.trim()}%`);
+        const pIdx = params.length;
+        whereClauses.push(`(s.name ILIKE $${pIdx} OR s.address ILIKE $${pIdx})`);
+      }
+
+      const whereSql = `WHERE ${whereClauses.join(' AND ')}`;
+
+      const countSql = `SELECT COUNT(*) AS total FROM stores s ${whereSql}`;
+      const countRes = await this.query(countSql, params);
+      const total = parseInt(countRes.rows[0].total, 10);
+
+      const limitIdx = params.length + 1;
+      const offsetIdx = params.length + 2;
+
+      const selectSql = `
+        SELECT s.id, s.name, s.email, s.address, s.created_at, s.updated_at,
+               COALESCE(ROUND(AVG(r.rating_value)::numeric, 2), 0.00) AS overall_rating,
+               COALESCE(ROUND(AVG(r.rating_value)::numeric, 2), 0.00) AS average_rating,
+               COUNT(r.id)::int AS rating_count,
+               my_r.rating_value AS user_rating,
+               my_r.rating_value AS my_rating,
+               my_r.comment AS my_comment,
+               my_r.updated_at AS my_rating_updated_at
+        FROM stores s
+        LEFT JOIN ratings r ON s.id = r.store_id
+        LEFT JOIN ratings my_r ON s.id = my_r.store_id AND my_r.user_id = $1
+        ${whereSql}
+        GROUP BY s.id, my_r.rating_value, my_r.comment, my_r.updated_at
+        ORDER BY ${safeSortExpression} ${safeSortOrder}
+        LIMIT $${limitIdx} OFFSET $${offsetIdx}
+      `;
+
+      const dataRes = await this.query(selectSql, [...params, limit, offset]);
+      return { items: dataRes.rows, total };
+    } catch (err) {
+      let filtered = this.inMemoryStores.map((store) => {
+        const userRatingRecord = this.inMemoryRatings.find(
+          (r) => r.store_id === store.id && r.user_id === currentUserId
+        );
+        return {
+          id: store.id,
+          name: store.name,
+          email: store.email,
+          address: store.address,
+          created_at: store.created_at,
+          updated_at: store.updated_at,
+          overall_rating: store.overall_rating || store.average_rating || '0.00',
+          average_rating: store.average_rating || store.overall_rating || '0.00',
+          rating_count: store.rating_count || 0,
+          user_rating: userRatingRecord ? userRatingRecord.rating_value : null,
+          my_rating: userRatingRecord ? userRatingRecord.rating_value : null,
+          my_comment: userRatingRecord ? userRatingRecord.comment : null,
+        };
+      });
+
+      if (name) {
+        filtered = filtered.filter((s) => s.name.toLowerCase().includes(name.trim().toLowerCase()));
+      }
+      if (address) {
+        filtered = filtered.filter((s) => s.address.toLowerCase().includes(address.trim().toLowerCase()));
+      }
+      if (search) {
+        const s = search.trim().toLowerCase();
+        filtered = filtered.filter(
+          (st) =>
+            st.name.toLowerCase().includes(s) ||
+            st.address.toLowerCase().includes(s)
+        );
+      }
+
+      const isAsc = safeSortOrder === 'ASC';
+      const keyName = ['name', 'address', 'rating', 'average_rating', 'user_rating', 'created_at'].includes(sortBy)
+        ? sortBy
+        : 'created_at';
+
+      filtered.sort((a, b) => {
+        let valA = a[keyName] || '';
+        let valB = b[keyName] || '';
+        if (keyName === 'rating' || keyName === 'average_rating') {
+          valA = parseFloat(a.overall_rating || 0);
+          valB = parseFloat(b.overall_rating || 0);
+        } else if (keyName === 'user_rating' || keyName === 'my_rating') {
+          valA = a.user_rating !== null ? a.user_rating : -1;
+          valB = b.user_rating !== null ? b.user_rating : -1;
         } else if (keyName === 'created_at') {
           valA = new Date(valA).getTime();
           valB = new Date(valB).getTime();
