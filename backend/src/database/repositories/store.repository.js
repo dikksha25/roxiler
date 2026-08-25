@@ -64,6 +64,17 @@ const STORE_SORT_ALLOWLIST = {
   created_at: 's.created_at',
 };
 
+const USER_BROWSE_SORT_ALLOWLIST = {
+  name: 's.name',
+  address: 's.address',
+  rating: 'overall_rating',
+  average_rating: 'overall_rating',
+  overall_rating: 'overall_rating',
+  user_rating: 'my_r.rating_value',
+  my_rating: 'my_r.rating_value',
+  created_at: 's.created_at',
+};
+
 class StoreRepository extends BaseRepository {
   constructor() {
     super('stores');
@@ -318,7 +329,7 @@ class StoreRepository extends BaseRepository {
     offset = 0,
   }) {
     const currentUserId = parseInt(userId, 10);
-    const safeSortExpression = STORE_SORT_ALLOWLIST[sortBy] || 's.created_at';
+    const safeSortExpression = USER_BROWSE_SORT_ALLOWLIST[sortBy] || 's.created_at';
     const safeSortOrder = sortOrder && sortOrder.toString().toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
     try {
@@ -407,14 +418,14 @@ class StoreRepository extends BaseRepository {
       }
 
       const isAsc = safeSortOrder === 'ASC';
-      const keyName = ['name', 'address', 'rating', 'average_rating', 'user_rating', 'created_at'].includes(sortBy)
+      const keyName = ['name', 'address', 'rating', 'average_rating', 'overall_rating', 'user_rating', 'my_rating', 'created_at'].includes(sortBy)
         ? sortBy
         : 'created_at';
 
       filtered.sort((a, b) => {
         let valA = a[keyName] || '';
         let valB = b[keyName] || '';
-        if (keyName === 'rating' || keyName === 'average_rating') {
+        if (keyName === 'rating' || keyName === 'average_rating' || keyName === 'overall_rating') {
           valA = parseFloat(a.overall_rating || 0);
           valB = parseFloat(b.overall_rating || 0);
         } else if (keyName === 'user_rating' || keyName === 'my_rating') {

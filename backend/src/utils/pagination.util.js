@@ -1,7 +1,7 @@
 class PaginationUtil {
   static parse(query = {}) {
     const page = Math.max(1, parseInt(query.page, 10) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(query.limit, 10) || 10));
+    const limit = Math.min(100, Math.max(1, parseInt(query.limit || query.pageSize, 10) || 10));
     const offset = (page - 1) * limit;
 
     return {
@@ -24,10 +24,11 @@ class PaginationUtil {
     const totalPages = Math.ceil(total / pageSize) || 1;
 
     return {
+      page: currentPage,
+      pageSize,
       totalItems: total,
       totalPages,
       currentPage,
-      pageSize,
       hasNextPage: currentPage < totalPages,
       hasPrevPage: currentPage > 1,
     };
