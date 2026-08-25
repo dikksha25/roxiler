@@ -79,10 +79,15 @@ async function runAuthTests() {
   assert.strictEqual(meRes.body.data.password_hash, undefined, 'Never expose password_hash');
   console.log('   ✅ 1.9 Session Profile Rehydration (/auth/me)');
 
-  // 1.10 Logout
+  // 1.10 Logout & Revocation
   const logoutRes = await request('POST', '/auth/logout', null, adminRes.body.data.token);
   assert.strictEqual(logoutRes.status, 200, 'Logout should return 200 OK');
   console.log('   ✅ 1.10 Logout Endpoint Confirmation (200 OK)');
+
+  // 1.11 Revoked Token Access Blocked After Logout
+  const postLogoutMe = await request('GET', '/auth/me', null, adminRes.body.data.token);
+  assert.strictEqual(postLogoutMe.status, 401, 'Revoked token must be rejected with 401 Unauthorized');
+  console.log('   ✅ 1.11 Revoked JWT Token Rejected After Logout (401 Unauthorized)');
 }
 
 module.exports = runAuthTests;

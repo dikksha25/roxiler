@@ -107,7 +107,7 @@ class AuthService {
   /**
    * Secure Password Update for all authenticated roles
    */
-  async updatePassword(userId, { currentPassword, newPassword, confirmPassword }) {
+  async updatePassword(userId, { currentPassword, newPassword, confirmPassword }, token = null, exp = null) {
     if (confirmPassword !== undefined && confirmPassword !== null && confirmPassword !== '' && confirmPassword !== newPassword) {
       throw new BadRequestError('New password and confirmation do not match.');
     }
@@ -140,13 +140,23 @@ class AuthService {
     const newHash = await hashPassword(newPassword);
     await userRepository.updatePassword(userId, newHash);
 
+    // Invalidate the current session token upon password change
+    if (token) {
+      const tokenRevocationRegistry = require('../utils/tokenRevocation.util');
+      tokenRevocationRegistry.revoke(token, exp);
+    }
+
     return { message: 'Password updated successfully. Please use your new password on subsequent logins.' };
   }
 
   /**
-   * Logout helper
+   * Logout and invalidate active JWT token
    */
-  async logout(_userId) {
+  async logout(_userId, token = null, exp = null) {
+    if (token) {
+      const tokenRevocationRegistry = require('../utils/tokenRevocation.util');
+      tokenRevocationRegistry.revoke(token, exp);
+    }
     return { message: 'Logged out successfully.' };
   }
 }
