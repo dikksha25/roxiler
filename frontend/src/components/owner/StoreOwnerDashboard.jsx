@@ -254,9 +254,6 @@ export const StoreOwnerDashboard = () => {
               STORE_OWNER
             </span>
           </div>
-          <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.95rem' }}>
-            Monitor real-time store performance, rating distributions, and customer review feedback.
-          </p>
         </div>
 
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>

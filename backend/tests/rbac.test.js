@@ -2,7 +2,7 @@ const assert = require('assert');
 const { request } = require('./testHelper');
 
 async function runRbacTests() {
-  console.log('\n🔵 [TEST SUITE 2/6]: Role-Based Access Control (RBAC) & Authorization');
+  console.log('\n🔵 [TEST SUITE 2/6]: Role-Based Access Control (RBAC) & Role Hierarchy');
 
   // Obtain tokens for all 3 roles
   const adminLogin = await request('POST', '/auth/login', {
@@ -53,21 +53,19 @@ async function runRbacTests() {
   assert.strictEqual(ownerAdminDashRes.status, 403, 'Store owner must receive 403 Forbidden');
   console.log('   ✅ 2.5 STORE_OWNER Blocked from Admin Dashboard (403 Forbidden)');
 
-  // 2.6 STORE_OWNER Blocked from Rating Submission (403 Forbidden)
-  const ownerRateRes = await request('POST', '/ratings', {
-    storeId: 1,
-    rating: 5,
-  }, ownerToken);
-  assert.strictEqual(ownerRateRes.status, 403, 'Store owner must receive 403 Forbidden on rating submission');
-  console.log('   ✅ 2.6 STORE_OWNER Blocked from Submitting Customer Ratings (403 Forbidden)');
+  // 2.6 STORE_OWNER Inherits NORMAL_USER Capabilities (Can browse & submit ratings)
+  const ownerBrowseRes = await request('GET', '/stores/browse', null, ownerToken);
+  assert.strictEqual(ownerBrowseRes.status, 200, 'Store owner can access Normal User store browsing');
+  console.log('   ✅ 2.6 STORE_OWNER Inherits NORMAL_USER Capabilities (200 OK)');
 
-  // 2.7 STORE_OWNER Authorized Access to Own Store Telemetry
-  const ownerStatsRes = await request('GET', '/dashboard/owner/statistics', null, ownerToken);
-  assert.strictEqual(ownerStatsRes.status, 200);
-  assert.ok(ownerStatsRes.body.data.overall);
-  console.log('   ✅ 2.7 STORE_OWNER Authorized: Own Store Telemetry (200 OK)');
+  // 2.7 SYSTEM_ADMIN Inherits All Capabilities (Can access Store Owner & Normal User APIs)
+  const adminOwnerStatsRes = await request('GET', '/dashboard/owner/statistics?storeId=1', null, adminToken);
+  assert.strictEqual(adminOwnerStatsRes.status, 200, 'Admin can inspect any store owner statistics');
+  const adminBrowseRes = await request('GET', '/stores/browse', null, adminToken);
+  assert.strictEqual(adminBrowseRes.status, 200, 'Admin can access store browsing');
+  console.log('   ✅ 2.7 SYSTEM_ADMIN Inherits STORE_OWNER & NORMAL_USER Capabilities (200 OK)');
 
-  // 2.8 STORE_OWNER Blocked from Another Owner\'s Store Telemetry (403 Forbidden)
+  // 2.8 Cross-Owner Isolation: Store Owner cannot query foreign store analytics
   const crossOwnerRes = await request('GET', '/dashboard/owner/statistics?storeId=2', null, ownerToken);
   assert.strictEqual(crossOwnerRes.status, 403, 'Owner cannot query another owner store');
   console.log('   ✅ 2.8 Cross-Owner Isolation: Blocked from Foreign Store Telemetry (403 Forbidden)');

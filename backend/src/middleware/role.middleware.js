@@ -2,10 +2,21 @@ const ForbiddenError = require('../errors/forbidden.error');
 const UnauthorizedError = require('../errors/unauthorized.error');
 
 /**
- * Reusable Role-Based Access Control (RBAC) Guard Middleware
- * Creates an Express middleware restricting route access to one or more allowed roles.
+ * Role Hierarchy:
+ * - SYSTEM_ADMIN can access all capabilities of SYSTEM_ADMIN, STORE_OWNER, and NORMAL_USER
+ * - STORE_OWNER can access all capabilities of STORE_OWNER and NORMAL_USER
+ * - NORMAL_USER can access capabilities of NORMAL_USER
+ */
+const ROLE_HIERARCHY = {
+  SYSTEM_ADMIN: ['SYSTEM_ADMIN', 'STORE_OWNER', 'NORMAL_USER'],
+  STORE_OWNER: ['STORE_OWNER', 'NORMAL_USER'],
+  NORMAL_USER: ['NORMAL_USER'],
+};
+
+/**
+ * Reusable Role-Based Access Control (RBAC) Guard Middleware with Role Hierarchy
  *
- * @param  {...string} allowedRoles - List of permitted roles (e.g. ROLES.SYSTEM_ADMIN, ROLES.STORE_OWNER)
+ * @param  {...string} allowedRoles - List of permitted roles (e.g. ROLES.NORMAL_USER, ROLES.STORE_OWNER)
  * @returns {Function} Express middleware function
  */
 const authorize = (...allowedRoles) => {
@@ -14,15 +25,22 @@ const authorize = (...allowedRoles) => {
   }
 
   return (req, res, next) => {
-    // 1. Ensure user context is present (requires prior authenticate middleware)
+    // 1. Ensure user context is present
     if (!req.user) {
       throw new UnauthorizedError('Authentication required. Missing user session.');
     }
 
-    // 2. Check if the user's role is in the allowed roles list
-    if (!allowedRoles.includes(req.user.role)) {
+    const userRole = req.user.role;
+    const userPermissions = ROLE_HIERARCHY[userRole] || [userRole];
+
+    // 2. Check if the user's role or inherited roles match any allowed role
+    const hasPermission = allowedRoles.some((allowedRole) =>
+      userPermissions.includes(allowedRole)
+    );
+
+    if (!hasPermission) {
       throw new ForbiddenError(
-        `Access denied. Requires one of the following roles: [${allowedRoles.join(', ')}]. Current role: '${req.user.role}'.`
+        `Access denied. Requires one of the following roles: [${allowedRoles.join(', ')}]. Current role: '${userRole}'.`
       );
     }
 

@@ -93,9 +93,6 @@ export const AdminDashboard = ({ onNavigate }) => {
               SUPER ADMIN
             </span>
           </div>
-          <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.9rem' }}>
-            Live platform telemetry, user role governance, store directories, and real-time rating aggregations.
-          </p>
         </div>
 
         <div style={{ display: 'flex', gap: '0.5rem' }}>

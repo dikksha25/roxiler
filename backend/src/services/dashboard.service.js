@@ -181,9 +181,15 @@ class DashboardService {
     const oId = parseInt(ownerId, 10);
     const owner = await userRepository.findUserProfileById(oId);
 
-    const ownedStores = await storeRepository.findByOwnerId(oId);
+    let ownedStores = await storeRepository.findByOwnerId(oId);
+    if (owner?.role === 'SYSTEM_ADMIN' && requestedStoreId) {
+      const targetStore = await storeRepository.findDetailById(parseInt(requestedStoreId, 10));
+      if (targetStore) {
+        ownedStores = [targetStore];
+      }
+    }
 
-    if (requestedStoreId) {
+    if (requestedStoreId && owner?.role !== 'SYSTEM_ADMIN') {
       const targetSId = parseInt(requestedStoreId, 10);
       const isOwned = ownedStores.some((s) => s.id === targetSId);
       if (!isOwned) {
@@ -192,7 +198,7 @@ class DashboardService {
     }
 
     const storesToAnalyze = requestedStoreId
-      ? ownedStores.filter((s) => s.id === parseInt(requestedStoreId, 10))
+      ? (owner?.role === 'SYSTEM_ADMIN' ? ownedStores : ownedStores.filter((s) => s.id === parseInt(requestedStoreId, 10)))
       : ownedStores;
 
     let overallTotalRatings = 0;

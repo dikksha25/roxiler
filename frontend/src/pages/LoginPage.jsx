@@ -63,10 +63,7 @@ export const LoginPage = ({ onNavigate }) => {
               <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" />
             </svg>
           </div>
-          <h2 style={{ fontSize: '1.75rem', marginBottom: '0.35rem' }}>Single Sign-In</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            One common login portal for all three platform roles
-          </p>
+          <h2 style={{ fontSize: '1.75rem', marginBottom: '0.35rem' }}>Sign In</h2>
         </div>
 
         {error && (

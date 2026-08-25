@@ -121,7 +121,7 @@ BEFORE UPDATE ON ratings
 FOR EACH ROW
 EXECUTE FUNCTION trigger_set_timestamp();
 
--- Role validation trigger
+-- Role validation trigger: Store owners cannot rate their own store
 CREATE OR REPLACE FUNCTION trigger_validate_rating_submission()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -134,10 +134,7 @@ BEGIN
         RAISE EXCEPTION 'Referenced user with ID % does not exist', NEW.user_id;
     END IF;
 
-    IF v_user_role <> 'NORMAL_USER' THEN
-        RAISE EXCEPTION 'Only NORMAL_USER accounts can submit ratings. User ID % has role %', NEW.user_id, v_user_role;
-    END IF;
-
+    -- Check if submitting user is the owner of the target store
     SELECT owner_id INTO v_store_owner_id FROM stores WHERE id = NEW.store_id;
     
     IF v_store_owner_id IS NOT NULL AND v_store_owner_id = NEW.user_id THEN
