@@ -434,6 +434,80 @@ class RatingRepository extends BaseRepository {
     return await this.findByStoreIdWithUserDetails(storeId);
   }
 
+  /**
+   * Batch query ratings for multiple store IDs in a single SQL operation (N+1 query defense)
+   */
+  async findByStoreIdsWithUserDetails(storeIds) {
+    if (!storeIds || storeIds.length === 0) return {};
+    const ids = storeIds.map((id) => parseInt(id, 10)).filter((id) => !isNaN(id));
+    if (ids.length === 0) return {};
+
+    try {
+      const res = await this.query(
+        `SELECT r.id, r.user_id, r.store_id, r.rating_value, r.comment, r.created_at, r.updated_at,
+                u.name AS user_name, u.email AS user_email, u.address AS user_address
+         FROM ratings r
+         JOIN users u ON r.user_id = u.id
+         WHERE r.store_id = ANY($1::bigint[])
+         ORDER BY r.created_at DESC`,
+        [ids]
+      );
+
+      const map = {};
+      ids.forEach((id) => { map[id] = []; });
+
+      res.rows.forEach((row) => {
+        const entry = {
+          id: row.id,
+          rating_value: row.rating_value,
+          rating: row.rating_value,
+          comment: row.comment,
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+          user: {
+            id: row.user_id,
+            name: row.user_name,
+            email: row.user_email,
+            address: row.user_address,
+          },
+        };
+        if (!map[row.store_id]) map[row.store_id] = [];
+        map[row.store_id].push(entry);
+      });
+
+      return map;
+    } catch (err) {
+      const userRepository = require('./user.repository');
+      const map = {};
+      ids.forEach((id) => {
+        const storeRatings = this.inMemoryRatings.filter((r) => r.store_id === id);
+        map[id] = storeRatings.map((r) => {
+          const user = (userRepository.inMemoryUsers || []).find((u) => u.id === r.user_id) || {
+            id: r.user_id,
+            name: r.user_name || 'Customer User',
+            email: r.user_email || 'user@example.com',
+            address: r.user_address || 'Springfield',
+          };
+          return {
+            id: r.id,
+            rating_value: r.rating_value,
+            rating: r.rating_value,
+            comment: r.comment,
+            created_at: r.created_at,
+            updated_at: r.updated_at,
+            user: {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              address: user.address,
+            },
+          };
+        });
+      });
+      return map;
+    }
+  }
+
   async findByUserId(userId) {
     const uId = parseInt(userId, 10);
     try {

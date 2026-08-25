@@ -124,38 +124,38 @@ class DashboardService {
     const owner = await userRepository.findUserProfileById(oId);
 
     const stores = await storeRepository.findByOwnerId(oId);
+    const storeIds = stores.map((s) => s.id);
+    const ratingsMap = await ratingRepository.findByStoreIdsWithUserDetails(storeIds);
 
     let totalRatingsReceived = 0;
     let sumRating = 0;
 
-    const enrichedStores = await Promise.all(
-      stores.map(async (st) => {
-        const storeRatings = await ratingRepository.findByStoreIdWithUserDetails(st.id);
-        const ratingCount = storeRatings.length;
+    const enrichedStores = stores.map((st) => {
+      const storeRatings = ratingsMap[st.id] || [];
+      const ratingCount = storeRatings.length;
 
-        let avgRating = '0.00';
-        if (ratingCount > 0) {
-          const totalVal = storeRatings.reduce((acc, r) => acc + r.rating_value, 0);
-          avgRating = (totalVal / ratingCount).toFixed(2);
-          sumRating += totalVal;
-          totalRatingsReceived += ratingCount;
-        }
+      let avgRating = '0.00';
+      if (ratingCount > 0) {
+        const totalVal = storeRatings.reduce((acc, r) => acc + r.rating_value, 0);
+        avgRating = (totalVal / ratingCount).toFixed(2);
+        sumRating += totalVal;
+        totalRatingsReceived += ratingCount;
+      }
 
-        return {
-          id: st.id,
-          name: st.name,
-          email: st.email,
-          address: st.address,
-          average_rating: avgRating,
-          overall_rating: avgRating,
-          rating_count: ratingCount,
-          totalRatings: ratingCount,
-          created_at: st.created_at,
-          ratings: storeRatings,
-          customer_ratings: storeRatings,
-        };
-      })
-    );
+      return {
+        id: st.id,
+        name: st.name,
+        email: st.email,
+        address: st.address,
+        average_rating: avgRating,
+        overall_rating: avgRating,
+        rating_count: ratingCount,
+        totalRatings: ratingCount,
+        created_at: st.created_at,
+        ratings: storeRatings,
+        customer_ratings: storeRatings,
+      };
+    });
 
     const overallAverage =
       totalRatingsReceived > 0 ? (sumRating / totalRatingsReceived).toFixed(2) : '0.00';
@@ -201,56 +201,57 @@ class DashboardService {
       ? (owner?.role === 'SYSTEM_ADMIN' ? ownedStores : ownedStores.filter((s) => s.id === parseInt(requestedStoreId, 10)))
       : ownedStores;
 
+    const analyzeIds = storesToAnalyze.map((s) => s.id);
+    const ratingsMap = await ratingRepository.findByStoreIdsWithUserDetails(analyzeIds);
+
     let overallTotalRatings = 0;
     let overallSumRating = 0;
     const overallDistribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
 
-    const storeStats = await Promise.all(
-      storesToAnalyze.map(async (st) => {
-        const ratings = await ratingRepository.findByStoreIdWithUserDetails(st.id);
-        const totalRatings = ratings.length;
+    const storeStats = storesToAnalyze.map((st) => {
+      const ratings = ratingsMap[st.id] || [];
+      const totalRatings = ratings.length;
 
-        const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-        let storeSum = 0;
+      const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+      let storeSum = 0;
 
-        ratings.forEach((r) => {
-          const score = parseInt(r.rating_value, 10);
-          if (distribution[score] !== undefined) {
-            distribution[score] += 1;
-            overallDistribution[score] += 1;
-          }
-          storeSum += score;
-        });
+      ratings.forEach((r) => {
+        const score = parseInt(r.rating_value, 10);
+        if (distribution[score] !== undefined) {
+          distribution[score] += 1;
+          overallDistribution[score] += 1;
+        }
+        storeSum += score;
+      });
 
-        overallTotalRatings += totalRatings;
-        overallSumRating += storeSum;
+      overallTotalRatings += totalRatings;
+      overallSumRating += storeSum;
 
-        const avg = totalRatings > 0 ? storeSum / totalRatings : 0;
-        const avgTwoDec = avg.toFixed(2);
-        const avgOneDec = avg.toFixed(1);
+      const avg = totalRatings > 0 ? storeSum / totalRatings : 0;
+      const avgTwoDec = avg.toFixed(2);
+      const avgOneDec = avg.toFixed(1);
 
-        const distributionPercentages = {
-          1: totalRatings > 0 ? Math.round((distribution[1] / totalRatings) * 100) : 0,
-          2: totalRatings > 0 ? Math.round((distribution[2] / totalRatings) * 100) : 0,
-          3: totalRatings > 0 ? Math.round((distribution[3] / totalRatings) * 100) : 0,
-          4: totalRatings > 0 ? Math.round((distribution[4] / totalRatings) * 100) : 0,
-          5: totalRatings > 0 ? Math.round((distribution[5] / totalRatings) * 100) : 0,
-        };
+      const distributionPercentages = {
+        1: totalRatings > 0 ? Math.round((distribution[1] / totalRatings) * 100) : 0,
+        2: totalRatings > 0 ? Math.round((distribution[2] / totalRatings) * 100) : 0,
+        3: totalRatings > 0 ? Math.round((distribution[3] / totalRatings) * 100) : 0,
+        4: totalRatings > 0 ? Math.round((distribution[4] / totalRatings) * 100) : 0,
+        5: totalRatings > 0 ? Math.round((distribution[5] / totalRatings) * 100) : 0,
+      };
 
-        return {
-          storeId: st.id,
-          storeName: st.name,
-          storeEmail: st.email,
-          storeAddress: st.address,
-          averageRating: avgTwoDec,
-          averageRatingOneDecimal: avgOneDec,
-          totalRatings,
-          totalReviews: totalRatings,
-          distribution,
-          distributionPercentages,
-        };
-      })
-    );
+      return {
+        storeId: st.id,
+        storeName: st.name,
+        storeEmail: st.email,
+        storeAddress: st.address,
+        averageRating: avgTwoDec,
+        averageRatingOneDecimal: avgOneDec,
+        totalRatings,
+        totalReviews: totalRatings,
+        distribution,
+        distributionPercentages,
+      };
+    });
 
     const overallAvg = overallTotalRatings > 0 ? overallSumRating / overallTotalRatings : 0;
     const overallAvgTwoDec = overallAvg.toFixed(2);

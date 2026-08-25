@@ -23,16 +23,11 @@ class AuthService {
       throw new UnauthorizedError('Invalid email or password.');
     }
 
-    let isMatch = false;
-    if (user.password_hash) {
-      isMatch = await comparePassword(password, user.password_hash);
-    } else if (
-      (password === 'AdminPassword123!' && user.role === ROLES.SYSTEM_ADMIN) ||
-      (password === 'OwnerPassword123!' && user.role === ROLES.STORE_OWNER) ||
-      (password === 'UserPassword123!' && user.role === ROLES.NORMAL_USER)
-    ) {
-      isMatch = true;
+    if (!user.password_hash) {
+      throw new UnauthorizedError('Invalid email or password.');
     }
+
+    const isMatch = await comparePassword(password, user.password_hash);
 
     if (!isMatch) {
       throw new UnauthorizedError('Invalid email or password.');
@@ -122,16 +117,11 @@ class AuthService {
       throw new NotFoundError('User not found.');
     }
 
-    let isMatch = false;
-    if (user.password_hash) {
-      isMatch = await comparePassword(currentPassword, user.password_hash);
-    } else if (
-      (currentPassword === 'AdminPassword123!' && user.role === ROLES.SYSTEM_ADMIN) ||
-      (currentPassword === 'OwnerPassword123!' && user.role === ROLES.STORE_OWNER) ||
-      (currentPassword === 'UserPassword123!' && user.role === ROLES.NORMAL_USER)
-    ) {
-      isMatch = true;
+    if (!user.password_hash) {
+      throw new BadRequestError('Current password provided is incorrect.');
     }
+
+    const isMatch = await comparePassword(currentPassword, user.password_hash);
 
     if (!isMatch) {
       throw new BadRequestError('Current password provided is incorrect.');

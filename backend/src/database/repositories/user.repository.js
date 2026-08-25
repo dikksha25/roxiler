@@ -1,12 +1,14 @@
 const BaseRepository = require('./base.repository');
 const { ROLES } = require('../../constants/roles.constant');
 
+const bcrypt = require('bcryptjs');
+
 const DEV_SEEDED_USERS = [
   {
     id: 1,
     name: 'Alexander Wright',
     email: 'admin@storerating.com',
-    password_hash: null,
+    password_hash: bcrypt.hashSync('AdminPassword123!', 10),
     address: '100 Innovation Way, Suite 500, Tech Metropolis',
     role: ROLES.SYSTEM_ADMIN,
     created_at: new Date('2026-01-01T00:00:00.000Z'),
@@ -16,7 +18,7 @@ const DEV_SEEDED_USERS = [
     id: 2,
     name: 'Marcus Vance',
     email: 'owner.marcus@freshmart.com',
-    password_hash: null,
+    password_hash: bcrypt.hashSync('OwnerPassword123!', 10),
     address: '452 Marketplace Blvd, Downtown Plaza',
     role: ROLES.STORE_OWNER,
     created_at: new Date('2026-01-02T00:00:00.000Z'),
@@ -26,7 +28,7 @@ const DEV_SEEDED_USERS = [
     id: 3,
     name: 'Elena Rostova',
     email: 'owner.elena@nexuscoffee.com',
-    password_hash: null,
+    password_hash: bcrypt.hashSync('OwnerPassword123!', 10),
     address: '88 Artisan Alley, Heritage Square',
     role: ROLES.STORE_OWNER,
     created_at: new Date('2026-01-03T00:00:00.000Z'),
@@ -36,7 +38,7 @@ const DEV_SEEDED_USERS = [
     id: 4,
     name: 'Sarah Jenkins',
     email: 'sarah.jenkins@example.com',
-    password_hash: null,
+    password_hash: bcrypt.hashSync('UserPassword123!', 10),
     address: '742 Evergreen Terrace, Sector 4',
     role: ROLES.NORMAL_USER,
     created_at: new Date('2026-01-04T00:00:00.000Z'),
@@ -46,7 +48,7 @@ const DEV_SEEDED_USERS = [
     id: 5,
     name: 'David Kim',
     email: 'david.kim@example.com',
-    password_hash: null,
+    password_hash: bcrypt.hashSync('UserPassword123!', 10),
     address: '12 Elm Street, Apt 3B',
     role: ROLES.NORMAL_USER,
     created_at: new Date('2026-01-05T00:00:00.000Z'),
