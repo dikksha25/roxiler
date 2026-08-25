@@ -2,7 +2,15 @@ import { api } from './api';
 
 export const storeService = {
   /**
-   * List all stores with filtering, sorting, and pagination
+   * Protected store list for authenticated NORMAL_USER (includes user_rating / my_rating)
+   */
+  async browseStores(params = {}) {
+    const res = await api.get('/stores/browse', { params });
+    return res.data;
+  },
+
+  /**
+   * Public / General store directory
    */
   async getStores(params = {}) {
     const res = await api.get('/stores', { params });
