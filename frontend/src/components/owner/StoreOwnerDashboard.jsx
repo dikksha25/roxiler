@@ -30,8 +30,10 @@ export const StoreOwnerDashboard = () => {
   });
 
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [ratingsLoading, setRatingsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [successMsg, setSuccessMsg] = useState(null);
 
   // 1. Fetch Store Owner Statistics & Metrics
   const fetchStatistics = useCallback(async () => {
@@ -42,7 +44,10 @@ export const StoreOwnerDashboard = () => {
         setStatsData(res.data);
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load store owner statistics.');
+      setError(
+        err.response?.data?.message ||
+        'Failed to load store owner statistics. Please verify your connection or re-login.'
+      );
     }
   }, [selectedStoreId]);
 
@@ -84,6 +89,21 @@ export const StoreOwnerDashboard = () => {
     selectedStoreId,
   ]);
 
+  // Combined Refresh Handler
+  const handleManualRefresh = async () => {
+    setRefreshing(true);
+    setSuccessMsg(null);
+    try {
+      await Promise.all([fetchStatistics(), fetchRatings()]);
+      setSuccessMsg('Store telemetry and customer feedback refreshed successfully.');
+      setTimeout(() => setSuccessMsg(null), 4000);
+    } catch (err) {
+      setError('Error refreshing store telemetry.');
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   // Initial load
   useEffect(() => {
     const init = async () => {
@@ -116,7 +136,7 @@ export const StoreOwnerDashboard = () => {
       <div style={{ textAlign: 'center', padding: '5rem 1rem' }}>
         <Spinner size={45} />
         <p style={{ marginTop: '1rem', color: 'var(--text-muted)', fontSize: '0.95rem' }}>
-          Loading your store telemetry and customer ratings...
+          Loading your live store telemetry and customer ratings...
         </p>
       </div>
     );
@@ -194,27 +214,42 @@ export const StoreOwnerDashboard = () => {
           </p>
         </div>
 
-        {/* Multi-Store Switcher */}
-        {stores.length > 1 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-dim)', fontWeight: 600 }}>FILTER STORE:</span>
-            <select
-              className="input-field"
-              value={selectedStoreId || ''}
-              onChange={(e) => setSelectedStoreId(e.target.value ? parseInt(e.target.value, 10) : null)}
-              style={{ fontSize: '0.85rem', padding: '0.35rem 0.75rem' }}
-            >
-              <option value="">All Stores Aggregate ({stores.length})</option>
-              {stores.map((st) => (
-                <option key={st.storeId} value={st.storeId}>
-                  {st.storeName}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Multi-Store Switcher */}
+          {stores.length > 1 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.4rem 0.6rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', fontWeight: 600 }}>STORE:</span>
+              <select
+                className="input-field"
+                value={selectedStoreId || ''}
+                onChange={(e) => setSelectedStoreId(e.target.value ? parseInt(e.target.value, 10) : null)}
+                style={{ fontSize: '0.85rem', padding: '0.25rem 0.5rem' }}
+              >
+                <option value="">All Stores Aggregate ({stores.length})</option>
+                {stores.map((st) => (
+                  <option key={st.storeId} value={st.storeId}>
+                    {st.storeName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Refresh Action */}
+          <Button
+            variant="secondary"
+            onClick={handleManualRefresh}
+            loading={refreshing}
+            style={{ fontSize: '0.85rem' }}
+          >
+            🔄 Refresh Data
+          </Button>
+        </div>
       </div>
 
+      {successMsg && (
+        <Alert type="success" message={successMsg} onClose={() => setSuccessMsg(null)} />
+      )}
       {error && <Alert type="error" message={error} onClose={() => setError(null)} />}
 
       {/* SECTION 1: STORE INFORMATION & SUMMARY KPI CARDS */}
