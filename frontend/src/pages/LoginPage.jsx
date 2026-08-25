@@ -34,10 +34,10 @@ export const LoginPage = ({ onNavigate }) => {
       setEmail('admin@storerating.com');
       setPassword('AdminPassword123!');
     } else if (role === ROLES.STORE_OWNER) {
-      setEmail('owner.marcus@freshmart.com');
+      setEmail('owner1@freshmart.com');
       setPassword('OwnerPassword123!');
     } else {
-      setEmail('sarah.jenkins@example.com');
+      setEmail('user1@example.com');
       setPassword('UserPassword123!');
     }
     setError('');

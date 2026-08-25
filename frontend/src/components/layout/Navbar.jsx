@@ -8,7 +8,7 @@ export const Navbar = ({ currentRoute, onNavigate }) => {
 
   const handleLogout = async () => {
     await logout();
-    onNavigate('home');
+    onNavigate('login');
   };
 
   return (
@@ -16,7 +16,7 @@ export const Navbar = ({ currentRoute, onNavigate }) => {
       <header className="clay-navbar">
         {/* Brand Logo with 3D Convex Clay Orb */}
         <div
-          onClick={() => onNavigate('home')}
+          onClick={() => onNavigate(isAuthenticated ? 'dashboard' : 'login')}
           style={{
             cursor: 'pointer',
             display: 'flex',
@@ -42,22 +42,22 @@ export const Navbar = ({ currentRoute, onNavigate }) => {
 
         {/* Navigation Links & Controls */}
         <nav style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-          <button
-            onClick={() => onNavigate('home')}
-            className={`clay-nav-link ${currentRoute === 'home' ? 'active' : ''}`}
-          >
-            Home
-          </button>
-
-          <button
-            onClick={() => onNavigate('stores')}
-            className={`clay-nav-link ${currentRoute === 'stores' ? 'active' : ''}`}
-          >
-            Stores Directory
-          </button>
-
           {isAuthenticated && user ? (
             <>
+              <button
+                onClick={() => onNavigate('home')}
+                className={`clay-nav-link ${currentRoute === 'home' ? 'active' : ''}`}
+              >
+                Home
+              </button>
+
+              <button
+                onClick={() => onNavigate('stores')}
+                className={`clay-nav-link ${currentRoute === 'stores' ? 'active' : ''}`}
+              >
+                Stores Directory
+              </button>
+
               <button
                 onClick={() => onNavigate('dashboard')}
                 className={`clay-nav-link ${currentRoute === 'dashboard' ? 'active' : ''}`}
@@ -105,13 +105,13 @@ export const Navbar = ({ currentRoute, onNavigate }) => {
               <ThemeToggle />
               <button
                 onClick={() => onNavigate('login')}
-                className="clay-btn clay-btn-secondary clay-btn-sm"
+                className={`clay-btn ${currentRoute === 'login' ? 'clay-btn-primary' : 'clay-btn-secondary'} clay-btn-sm`}
               >
                 Sign In
               </button>
               <button
                 onClick={() => onNavigate('register')}
-                className="clay-btn clay-btn-primary clay-btn-sm"
+                className={`clay-btn ${currentRoute === 'register' ? 'clay-btn-primary' : 'clay-btn-secondary'} clay-btn-sm`}
               >
                 Register
               </button>
