@@ -27,7 +27,10 @@ CREATE TABLE IF NOT EXISTS users (
     CONSTRAINT chk_users_email_format CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
 );
 
+-- Performance Indexes for USERS
 CREATE UNIQUE INDEX IF NOT EXISTS uq_idx_users_email_lower ON users (LOWER(trim(email)));
+CREATE INDEX IF NOT EXISTS idx_users_name ON users (name);
+CREATE INDEX IF NOT EXISTS idx_users_name_lower ON users (LOWER(name));
 CREATE INDEX IF NOT EXISTS idx_users_role ON users (role);
 CREATE INDEX IF NOT EXISTS idx_users_created_at ON users (created_at DESC);
 
@@ -45,8 +48,13 @@ CREATE TABLE IF NOT EXISTS stores (
     CONSTRAINT chk_stores_email_format CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
 );
 
+-- Performance Indexes for STORES
 CREATE INDEX IF NOT EXISTS idx_stores_owner_id ON stores (owner_id);
 CREATE INDEX IF NOT EXISTS idx_stores_name ON stores (name);
+CREATE INDEX IF NOT EXISTS idx_stores_name_lower ON stores (LOWER(name));
+CREATE INDEX IF NOT EXISTS idx_stores_email ON stores (email);
+CREATE INDEX IF NOT EXISTS idx_stores_email_lower ON stores (LOWER(email));
+CREATE INDEX IF NOT EXISTS idx_stores_address ON stores (address);
 CREATE INDEX IF NOT EXISTS idx_stores_created_at ON stores (created_at DESC);
 
 -- 5. RATINGS Table
@@ -62,10 +70,12 @@ CREATE TABLE IF NOT EXISTS ratings (
     CONSTRAINT uq_user_store_rating UNIQUE (user_id, store_id)
 );
 
+-- Performance Indexes for RATINGS
 CREATE INDEX IF NOT EXISTS idx_ratings_store_id ON ratings (store_id);
 CREATE INDEX IF NOT EXISTS idx_ratings_user_id ON ratings (user_id);
 CREATE INDEX IF NOT EXISTS idx_ratings_created_at ON ratings (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_ratings_store_rating_val ON ratings (store_id, rating_value);
+CREATE INDEX IF NOT EXISTS idx_ratings_user_store_val ON ratings (user_id, store_id, rating_value);
 
 -- 6. Triggers
 CREATE OR REPLACE FUNCTION trigger_set_timestamp()
