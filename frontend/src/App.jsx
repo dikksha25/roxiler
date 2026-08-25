@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { Navbar } from './components/layout/Navbar';
 import { HomePage } from './pages/HomePage';
@@ -69,34 +70,36 @@ export function App() {
   };
 
   return (
-    <AuthProvider>
-      <div className="clay-bg-canvas" aria-hidden="true">
-        <div className="clay-bg-blob clay-blob-1" />
-        <div className="clay-bg-blob clay-blob-2" />
-        <div className="clay-bg-blob clay-blob-3" />
-      </div>
-      <div className="app-container">
-        <Navbar currentRoute={currentRoute} onNavigate={navigate} />
-        <main className="main-content">{renderRoute()}</main>
-        <footer
-          style={{
-            textAlign: 'center',
-            padding: '3rem 1.5rem',
-            color: 'var(--clay-text-muted)',
-            fontSize: '0.95rem',
-            marginTop: 'auto',
-            position: 'relative',
-            zIndex: 10,
-          }}
-        >
-          <div className="clay-container">
-            <p style={{ margin: 0, fontWeight: 600 }}>
-              &copy; {new Date().getFullYear()} <span style={{ color: 'var(--clay-accent-primary)', fontWeight: 800, fontFamily: 'var(--font-heading)' }}>StoreRate</span> — High-Fidelity Claymorphism Experience.
-            </p>
-          </div>
-        </footer>
-      </div>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <div className="clay-bg-canvas" aria-hidden="true">
+          <div className="clay-bg-blob clay-blob-1" />
+          <div className="clay-bg-blob clay-blob-2" />
+          <div className="clay-bg-blob clay-blob-3" />
+        </div>
+        <div className="app-container">
+          <Navbar currentRoute={currentRoute} onNavigate={navigate} />
+          <main className="main-content">{renderRoute()}</main>
+          <footer
+            style={{
+              textAlign: 'center',
+              padding: '3rem 1.5rem',
+              color: 'var(--clay-text-muted)',
+              fontSize: '0.95rem',
+              marginTop: 'auto',
+              position: 'relative',
+              zIndex: 10,
+            }}
+          >
+            <div className="clay-container">
+              <p style={{ margin: 0, fontWeight: 600 }}>
+                &copy; {new Date().getFullYear()} <span style={{ color: 'var(--clay-accent-primary)', fontWeight: 800, fontFamily: 'var(--font-heading)' }}>StoreRate</span> — High-Fidelity Dual-Theme Claymorphism.
+              </p>
+            </div>
+          </footer>
+        </div>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

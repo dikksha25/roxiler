@@ -81,6 +81,13 @@ const getStoreRatings = asyncHandler(async (req, res) => {
   return ApiResponse.success(res, 'Store ratings retrieved successfully', ratings);
 });
 
+const replyToRating = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const replyText = req.body.reply || req.body.comment;
+  const updated = await ratingService.replyToRating(req.user, id, replyText);
+  return ApiResponse.success(res, 'Reply posted successfully', updated);
+});
+
 module.exports = {
   submitRating,
   modifyRatingByStoreId,
@@ -88,4 +95,5 @@ module.exports = {
   getOwnerRatings,
   getMyRatings,
   getStoreRatings,
+  replyToRating,
 };

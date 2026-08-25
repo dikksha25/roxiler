@@ -4,15 +4,20 @@ import { ratingService } from '../../services/ratingService';
 import { Card } from '../common/Card';
 import { Button } from '../common/Button';
 import { Alert } from '../common/Alert';
-import { Spinner } from '../common/Spinner';
 import { Pagination } from '../common/Pagination';
+import { SkeletonCard } from '../common/SkeletonCard';
+import { SkeletonTable } from '../common/SkeletonTable';
 import { ChangePasswordModal } from '../common/ChangePasswordModal';
+import { OwnerReplyModal } from '../common/OwnerReplyModal';
 import { useDebounce } from '../../hooks/useDebounce';
 
 export const StoreOwnerDashboard = () => {
   const [statsData, setStatsData] = useState(null);
   const [selectedStoreId, setSelectedStoreId] = useState(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+
+  // Reply Modal state
+  const [selectedRatingForReply, setSelectedRatingForReply] = useState(null);
 
   // Ratings Table state
   const [ratings, setRatings] = useState([]);
@@ -101,7 +106,10 @@ export const StoreOwnerDashboard = () => {
         }
       }
     } catch (err) {
-      console.error('Failed to load customer ratings list', err);
+      setError(
+        err.response?.data?.message ||
+        'Failed to load customer ratings table.'
+      );
     } finally {
       setRatingsLoading(false);
     }
@@ -118,41 +126,7 @@ export const StoreOwnerDashboard = () => {
     selectedStoreId,
   ]);
 
-  const handleManualRefresh = async () => {
-    setRefreshing(true);
-    setSuccessMsg(null);
-    try {
-      await Promise.all([fetchStatistics(), fetchRatings()]);
-      setSuccessMsg('Store telemetry and customer feedback refreshed successfully.');
-      setTimeout(() => setSuccessMsg(null), 4000);
-    } catch (err) {
-      setError('Error refreshing store telemetry.');
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
-  const handleClearFilters = () => {
-    setSearchInput('');
-    setNameInput('');
-    setEmailInput('');
-    setAddressInput('');
-    setRatingScoreFilter('');
-  };
-
-  useEffect(() => {
-    const init = async () => {
-      setLoading(true);
-      await fetchStatistics();
-      setLoading(false);
-    };
-    init();
-  }, [fetchStatistics]);
-
-  useEffect(() => {
-    fetchRatings();
-  }, [fetchRatings]);
-
+  // Reset pagination on filter or store switch
   useEffect(() => {
     setRatingsPagination((prev) => ({ ...prev, page: 1 }));
   }, [
@@ -165,6 +139,23 @@ export const StoreOwnerDashboard = () => {
     sort,
   ]);
 
+  // Initial Load
+  useEffect(() => {
+    const initData = async () => {
+      setLoading(true);
+      await Promise.all([fetchStatistics(), fetchRatings()]);
+      setLoading(false);
+    };
+    initData();
+  }, [fetchStatistics, fetchRatings]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([fetchStatistics(), fetchRatings()]);
+    setRefreshing(false);
+    setSuccessMsg('Dashboard telemetry and reviews refreshed!');
+  };
+
   const handleSortToggle = (field) => {
     setSort((prev) => ({
       sortBy: field,
@@ -172,108 +163,98 @@ export const StoreOwnerDashboard = () => {
     }));
   };
 
+  const handleClearFilters = () => {
+    setSearchInput('');
+    setNameInput('');
+    setEmailInput('');
+    setAddressInput('');
+    setRatingScoreFilter('');
+    setSort({ sortBy: 'created_at', sortOrder: 'DESC' });
+  };
+
+  const handleReplySaved = ({ ratingId, ownerReply, ownerRepliedAt }) => {
+    setRatings((prev) =>
+      prev.map((r) => (r.id === ratingId ? { ...r, owner_reply: ownerReply, owner_replied_at: ownerRepliedAt } : r))
+    );
+    setSuccessMsg('Your official merchant reply has been published successfully!');
+  };
+
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '5rem 1rem' }}>
-        <Spinner size={48} />
-        <p style={{ marginTop: '1.25rem', color: 'var(--clay-text-muted)', fontSize: '1rem', fontWeight: 600 }}>
-          Loading live store telemetry and analytics...
-        </p>
+      <div className="clay-page">
+        <div className="clay-container">
+          <div className="clay-grid-3" style={{ marginBottom: '2rem' }}>
+            <SkeletonCard count={3} />
+          </div>
+          <SkeletonTable rows={5} columns={6} />
+        </div>
       </div>
     );
   }
 
   const stores = statsData?.stores || [];
-  const currentStore = selectedStoreId
-    ? stores.find((s) => s.storeId === selectedStoreId)
-    : null;
-
-  const activeStats = currentStore
-    ? {
-        name: currentStore.storeName,
-        email: currentStore.storeEmail,
-        address: currentStore.storeAddress,
-        averageRating: currentStore.averageRating,
-        averageRatingOneDecimal: currentStore.averageRatingOneDecimal,
-        totalRatings: currentStore.totalRatings,
-        distribution: currentStore.distribution,
-        distributionPercentages: currentStore.distributionPercentages,
-      }
-    : {
-        name: stores.length === 1 ? stores[0].storeName : 'All Managed Stores Portfolio',
-        email: stores.length === 1 ? stores[0].storeEmail : statsData?.owner?.email,
-        address: stores.length === 1 ? stores[0].storeAddress : `${stores.length} Registered Stores`,
-        averageRating: statsData?.overall?.averageRating || '0.00',
-        averageRatingOneDecimal: statsData?.overall?.averageRatingOneDecimal || '0.0',
-        totalRatings: statsData?.overall?.totalRatings || 0,
-        distribution: statsData?.overall?.distribution || { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
-        distributionPercentages: statsData?.overall?.distributionPercentages || { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
-      };
+  const activeStats = statsData?.activeStore || {
+    name: 'Your Store',
+    address: 'N/A',
+    email: 'N/A',
+    totalRatings: 0,
+    averageRating: '0.00',
+    averageRatingOneDecimal: '0.0',
+    distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+    distributionPercentages: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+  };
 
   const avgNum = parseFloat(activeStats.averageRating || 0);
+
+  // Calculate Sentiment Breakdown (4-5 = Positive, 3 = Neutral, 1-2 = Attention)
+  const dist = activeStats.distribution || { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  const totalR = activeStats.totalRatings || 0;
+  const positiveCount = (dist[5] || 0) + (dist[4] || 0);
+  const neutralCount = dist[3] || 0;
+  const criticalCount = (dist[2] || 0) + (dist[1] || 0);
+
+  const positivePct = totalR > 0 ? Math.round((positiveCount / totalR) * 100) : 0;
+  const neutralPct = totalR > 0 ? Math.round((neutralCount / totalR) * 100) : 0;
+  const criticalPct = totalR > 0 ? 100 - positivePct - neutralPct : 0;
 
   return (
     <div className="clay-page">
       <div className="clay-container">
-        {/* Header Banner */}
+        {/* Top Header & Quick Actions */}
         <div
-          className="clay-card clay-card-hero"
           style={{
-            marginBottom: '2.5rem',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
             flexWrap: 'wrap',
-            gap: '1.5rem',
+            gap: '1.25rem',
+            marginBottom: '2rem',
           }}
         >
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', marginBottom: '0.5rem' }}>
-              <h1 style={{ fontSize: 'clamp(1.85rem, 4vw, 2.5rem)', margin: 0, fontWeight: 900 }}>
-                🏪 Merchant Analytics Console
-              </h1>
-              <span className="clay-badge clay-badge-pink">STORE_OWNER</span>
-            </div>
-            <p style={{ color: 'var(--clay-text-muted)', margin: 0, fontSize: '1rem' }}>
-              Real-time customer rating metrics, score distributions, and review feedback.
-            </p>
+            <span className="clay-badge clay-badge-purple" style={{ marginBottom: '0.5rem' }}>
+              COMMERCIAL OPERATOR CONSOLE
+            </span>
+            <h1 style={{ fontSize: 'clamp(1.85rem, 4vw, 2.5rem)', margin: 0, fontWeight: 900 }}>
+              🏬 Store Owner Telemetry &amp; Reviews
+            </h1>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.85rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            {stores.length > 1 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ fontSize: '0.85rem', color: 'var(--clay-text-dim)', fontWeight: 700 }}>STORE:</span>
-                <select
-                  className="clay-select"
-                  value={selectedStoreId || ''}
-                  onChange={(e) => setSelectedStoreId(e.target.value ? parseInt(e.target.value, 10) : null)}
-                  style={{ minHeight: '44px', padding: '0.4rem 0.85rem' }}
-                >
-                  <option value="">All Managed Stores ({stores.length})</option>
-                  {stores.map((st) => (
-                    <option key={st.storeId} value={st.storeId}>
-                      {st.storeName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
             <Button
               variant="secondary"
-              onClick={handleManualRefresh}
+              onClick={handleRefresh}
               loading={refreshing}
               style={{ minHeight: '44px' }}
             >
-              🔄 Refresh Telemetry
+              🔄 Refresh
             </Button>
-
             <Button
               variant="primary"
               onClick={() => setShowPasswordModal(true)}
               style={{ minHeight: '44px' }}
             >
-              🔒 Change Password
+              🔒 Security Settings
             </Button>
           </div>
         </div>
@@ -283,18 +264,54 @@ export const StoreOwnerDashboard = () => {
         )}
         {error && <Alert type="error" message={error} onClose={() => setError(null)} />}
 
-        {/* SECTION 1: STORE SUMMARY KPI CARDS */}
-        <div className="clay-grid-3" style={{ marginBottom: '2.5rem' }}>
-          {/* Store Info Card */}
+        {/* Multi-Store Switcher (if owner manages >1 store) */}
+        {stores.length > 1 && (
+          <Card style={{ marginBottom: '2rem', padding: '1.5rem 1.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div className="clay-orb clay-orb-blue" style={{ width: '40px', height: '40px', fontSize: '1.15rem' }}>
+                  🏪
+                </div>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>
+                    Select Managed Store
+                  </h4>
+                  <span style={{ color: 'var(--clay-text-muted)', fontSize: '0.85rem' }}>
+                    Switch telemetry between your registered establishments
+                  </span>
+                </div>
+              </div>
+
+              <div style={{ minWidth: '280px' }}>
+                <select
+                  className="clay-select"
+                  value={selectedStoreId || ''}
+                  onChange={(e) => setSelectedStoreId(e.target.value ? parseInt(e.target.value, 10) : null)}
+                >
+                  <option value="">All Stores Combined ({stores.length})</option>
+                  {stores.map((st) => (
+                    <option key={st.id} value={st.id}>
+                      {st.name} ({st.total_ratings || 0} reviews)
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* SECTION 1: 3 KPI CARDS */}
+        <div className="clay-grid-3" style={{ marginBottom: '2rem' }}>
+          {/* Store Profile Card */}
           <Card style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                <span className="clay-badge clay-badge-purple">STORE PROFILE</span>
+                <span className="clay-badge clay-badge-purple">COMMERCIAL IDENTITY</span>
                 <div className="clay-orb clay-orb-purple" style={{ width: '42px', height: '42px', fontSize: '1.2rem' }}>
-                  🏪
+                  🏢
                 </div>
               </div>
-              <h3 style={{ fontSize: '1.35rem', fontWeight: 900, margin: '0 0 0.5rem 0' }}>
+              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.35rem', fontWeight: 900, lineHeight: 1.25 }}>
                 {activeStats.name}
               </h3>
               <p style={{ color: 'var(--clay-text-muted)', fontSize: '0.9rem', margin: '0 0 0.5rem 0' }}>
@@ -334,7 +351,7 @@ export const StoreOwnerDashboard = () => {
               </div>
             </div>
             <div style={{ marginTop: '1.25rem', paddingTop: '0.85rem', borderTop: '2px solid rgba(124, 58, 237, 0.08)', fontSize: '0.82rem', color: 'var(--clay-text-dim)', fontWeight: 600 }}>
-              Precision: {activeStats.averageRatingOneDecimal} ★ (Calculated live from ratings)
+              Precision: {activeStats.averageRatingOneDecimal} ★
             </div>
           </Card>
 
@@ -355,81 +372,113 @@ export const StoreOwnerDashboard = () => {
               </p>
             </div>
             <div style={{ marginTop: '1.25rem', paddingTop: '0.85rem', borderTop: '2px solid rgba(124, 58, 237, 0.08)', fontSize: '0.82rem', color: 'var(--clay-text-dim)', fontWeight: 600 }}>
-              One-Rating-Per-User Rule Active
+              One-Rating-Per-User Enforced
             </div>
           </Card>
         </div>
 
-        {/* SECTION 2: RATING DISTRIBUTION BREAKDOWN */}
-        <Card style={{ marginBottom: '2.5rem', padding: '2rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-            <div>
-              <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.35rem', fontWeight: 900 }}>📈 Star Rating Distribution</h3>
-              <p style={{ margin: 0, color: 'var(--clay-text-muted)', fontSize: '0.9rem' }}>
-                Breakdown of customer ratings across 1 to 5 star scores.
-              </p>
+        {/* SECTION 2: SENTIMENT METER & RATING DISTRIBUTION */}
+        <div className="clay-grid-2" style={{ marginBottom: '2.5rem' }}>
+          {/* Customer Sentiment Meter */}
+          <Card style={{ padding: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <div>
+                <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.25rem', fontWeight: 900 }}>
+                  🎭 Customer Sentiment Meter
+                </h3>
+                <p style={{ margin: 0, color: 'var(--clay-text-muted)', fontSize: '0.88rem' }}>
+                  Real-time sentiment breakdown of customer feedback
+                </p>
+              </div>
             </div>
-            <span className="clay-badge clay-badge-purple">
-              Total: {activeStats.totalRatings} Reviews
-            </span>
-          </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {[5, 4, 3, 2, 1].map((stars) => {
-              const count = activeStats.distribution[stars] || 0;
-              const pct = activeStats.distributionPercentages[stars] || 0;
+            <div className="sentiment-bar-track">
+              <div className="sentiment-seg-positive" style={{ width: `${positivePct}%` }} title={`Positive: ${positivePct}%`} />
+              <div className="sentiment-seg-neutral" style={{ width: `${neutralPct}%` }} title={`Neutral: ${neutralPct}%`} />
+              <div className="sentiment-seg-critical" style={{ width: `${criticalPct}%` }} title={`Needs Attention: ${criticalPct}%`} />
+            </div>
 
-              return (
-                <div key={stars} style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                  <span style={{ width: '68px', fontSize: '0.95rem', fontWeight: 800, fontFamily: 'var(--font-heading)', color: 'var(--clay-text-primary)' }}>
-                    {stars} Stars
-                  </span>
+            <div className="sentiment-legend">
+              <span style={{ color: 'var(--clay-success)' }}>
+                😍 Positive (4-5★): <strong>{positivePct}%</strong> ({positiveCount})
+              </span>
+              <span style={{ color: 'var(--clay-warning)' }}>
+                😐 Neutral (3★): <strong>{neutralPct}%</strong> ({neutralCount})
+              </span>
+              <span style={{ color: 'var(--clay-danger)' }}>
+                🙁 Attention (1-2★): <strong>{criticalPct}%</strong> ({criticalCount})
+              </span>
+            </div>
+          </Card>
 
-                  {/* Progress Bar Container */}
-                  <div
-                    style={{
-                      flex: 1,
-                      height: '16px',
-                      background: '#EFEBF5',
-                      borderRadius: '9999px',
-                      boxShadow: 'var(--shadow-clay-pressed)',
-                      overflow: 'hidden',
-                      position: 'relative',
-                    }}
-                  >
+          {/* Star Rating Distribution */}
+          <Card style={{ padding: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <div>
+                <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.25rem', fontWeight: 900 }}>
+                  📈 Star Distribution Breakdown
+                </h3>
+                <p style={{ margin: 0, color: 'var(--clay-text-muted)', fontSize: '0.88rem' }}>
+                  Exact counts across 1 to 5 star ratings
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {[5, 4, 3, 2, 1].map((stars) => {
+                const count = activeStats.distribution[stars] || 0;
+                const pct = activeStats.distributionPercentages[stars] || 0;
+
+                return (
+                  <div key={stars} style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                    <span style={{ width: '60px', fontSize: '0.88rem', fontWeight: 800, fontFamily: 'var(--font-heading)', color: 'var(--clay-text-primary)' }}>
+                      {stars} Stars
+                    </span>
+
                     <div
                       style={{
-                        height: '100%',
-                        width: `${pct}%`,
-                        background:
-                          stars >= 4
-                            ? 'var(--clay-gradient-emerald)'
-                            : stars === 3
-                            ? 'var(--clay-gradient-amber)'
-                            : 'var(--clay-gradient-secondary)',
+                        flex: 1,
+                        height: '12px',
+                        background: 'var(--clay-input-bg)',
                         borderRadius: '9999px',
-                        transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                        boxShadow: 'var(--shadow-clay-pressed)',
+                        overflow: 'hidden',
                       }}
-                    />
-                  </div>
+                    >
+                      <div
+                        style={{
+                          height: '100%',
+                          width: `${pct}%`,
+                          background:
+                            stars >= 4
+                              ? 'var(--clay-gradient-emerald)'
+                              : stars === 3
+                              ? 'var(--clay-gradient-amber)'
+                              : 'var(--clay-gradient-secondary)',
+                          borderRadius: '9999px',
+                          transition: 'width 0.6s ease',
+                        }}
+                      />
+                    </div>
 
-                  <div style={{ width: '130px', textAlign: 'right', fontSize: '0.92rem', color: 'var(--clay-text-muted)', fontWeight: 700 }}>
-                    <strong>{count}</strong> ({pct}%)
+                    <div style={{ width: '90px', textAlign: 'right', fontSize: '0.85rem', color: 'var(--clay-text-muted)', fontWeight: 700 }}>
+                      <strong>{count}</strong> ({pct}%)
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        </Card>
+                );
+              })}
+            </div>
+          </Card>
+        </div>
 
-        {/* SECTION 3: USERS WHO RATED THE STORE */}
+        {/* SECTION 3: USERS WHO RATED THE STORE & OWNER REPLY ACTIONS */}
         <div className="clay-table-wrapper" style={{ marginBottom: '2.5rem' }}>
           {/* Table Header & Search Filter Bar */}
           <div
             style={{
               padding: '1.5rem 1.75rem',
               borderBottom: '2px solid rgba(124, 58, 237, 0.08)',
-              background: 'rgba(255, 255, 255, 0.5)',
+              background: 'var(--clay-card-bg)',
             }}
           >
             <div
@@ -443,9 +492,11 @@ export const StoreOwnerDashboard = () => {
               }}
             >
               <div>
-                <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.35rem', fontWeight: 900 }}>👥 Customer Reviewers Feed</h3>
+                <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.35rem', fontWeight: 900 }}>
+                  💬 Customer Reviews &amp; Direct Response Thread
+                </h3>
                 <p style={{ margin: 0, color: 'var(--clay-text-muted)', fontSize: '0.9rem' }}>
-                  Verified customer ratings and review comments submitted for your store.
+                  Engage directly with customers by publishing official store owner replies.
                 </p>
               </div>
 
@@ -454,7 +505,7 @@ export const StoreOwnerDashboard = () => {
                   <input
                     type="text"
                     className="clay-input"
-                    placeholder="Search reviewer / store..."
+                    placeholder="Search reviewer / comment..."
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
                     style={{ minHeight: '44px' }}
@@ -466,7 +517,7 @@ export const StoreOwnerDashboard = () => {
                   onClick={() => setShowAdvancedFilters((prev) => !prev)}
                   style={{ minHeight: '44px' }}
                 >
-                  {showAdvancedFilters ? '▲ Hide Filters' : '▼ Specific Filters'}
+                  {showAdvancedFilters ? '▲ Hide' : '▼ More Filters'}
                 </Button>
 
                 {activeFiltersCount > 0 && (
@@ -557,12 +608,7 @@ export const StoreOwnerDashboard = () => {
 
           {/* Table Content */}
           {ratingsLoading ? (
-            <div style={{ textAlign: 'center', padding: '4rem 1rem' }}>
-              <Spinner size={40} />
-              <p style={{ marginTop: '1rem', color: 'var(--clay-text-muted)', fontSize: '0.9rem' }}>
-                Loading reviewer records...
-              </p>
-            </div>
+            <SkeletonTable rows={5} columns={6} />
           ) : ratings.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '4rem 1.5rem' }}>
               <div className="clay-orb clay-orb-purple" style={{ margin: '0 auto 1.25rem', width: '56px', height: '56px', fontSize: '1.5rem' }}>
@@ -587,43 +633,29 @@ export const StoreOwnerDashboard = () => {
               <thead>
                 <tr>
                   <th onClick={() => handleSortToggle('name')} style={{ cursor: 'pointer' }}>
-                    User Name {sort.sortBy === 'name' ? (sort.sortOrder === 'ASC' ? '▲' : '▼') : ''}
+                    Customer {sort.sortBy === 'name' ? (sort.sortOrder === 'ASC' ? '▲' : '▼') : ''}
                   </th>
-                  <th onClick={() => handleSortToggle('email')} style={{ cursor: 'pointer' }}>
-                    User Email {sort.sortBy === 'email' ? (sort.sortOrder === 'ASC' ? '▲' : '▼') : ''}
-                  </th>
-                  <th onClick={() => handleSortToggle('address')} style={{ cursor: 'pointer' }}>
-                    User Address {sort.sortBy === 'address' ? (sort.sortOrder === 'ASC' ? '▲' : '▼') : ''}
-                  </th>
-                  {stores.length > 1 && !selectedStoreId && (
-                    <th>Store Name</th>
-                  )}
                   <th onClick={() => handleSortToggle('rating')} style={{ cursor: 'pointer' }}>
                     Rating {sort.sortBy === 'rating' ? (sort.sortOrder === 'ASC' ? '▲' : '▼') : ''}
                   </th>
                   <th onClick={() => handleSortToggle('created_at')} style={{ cursor: 'pointer' }}>
                     Date {sort.sortBy === 'created_at' ? (sort.sortOrder === 'ASC' ? '▲' : '▼') : ''}
                   </th>
-                  <th>Feedback Comment</th>
+                  <th>Feedback &amp; Owner Response</th>
+                  <th style={{ textAlign: 'right' }}>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {ratings.map((r) => (
                   <tr key={r.id}>
-                    <td style={{ fontWeight: 800, color: 'var(--clay-text-primary)' }}>
-                      {r.user?.name || 'Customer User'}
+                    <td>
+                      <div style={{ fontWeight: 800, color: 'var(--clay-text-primary)' }}>
+                        {r.user?.name || 'Customer User'}
+                      </div>
+                      <div style={{ color: 'var(--clay-text-dim)', fontSize: '0.8rem' }}>
+                        {r.user?.email || 'N/A'} • {r.user?.address || 'Springfield'}
+                      </div>
                     </td>
-                    <td style={{ color: 'var(--clay-text-muted)' }}>
-                      {r.user?.email || 'N/A'}
-                    </td>
-                    <td style={{ color: 'var(--clay-text-muted)', fontSize: '0.85rem' }}>
-                      {r.user?.address || 'N/A'}
-                    </td>
-                    {stores.length > 1 && !selectedStoreId && (
-                      <td style={{ color: 'var(--clay-text-muted)', fontSize: '0.85rem' }}>
-                        {r.store_name}
-                      </td>
-                    )}
                     <td>
                       <span
                         className={`clay-badge ${
@@ -644,12 +676,36 @@ export const StoreOwnerDashboard = () => {
                         day: 'numeric',
                       })}
                     </td>
-                    <td style={{ color: 'var(--clay-text-primary)', fontSize: '0.85rem' }}>
+                    <td style={{ maxWidth: '380px' }}>
                       {r.comment ? (
-                        <span style={{ fontStyle: 'italic', color: 'var(--clay-text-muted)' }}>"{r.comment}"</span>
+                        <div style={{ fontStyle: 'italic', color: 'var(--clay-text-primary)', fontSize: '0.9rem', marginBottom: r.owner_reply ? '0.4rem' : '0' }}>
+                          "{r.comment}"
+                        </div>
                       ) : (
-                        <span style={{ color: 'var(--clay-text-dim)' }}>No written comment</span>
+                        <div style={{ color: 'var(--clay-text-dim)', fontSize: '0.85rem', marginBottom: r.owner_reply ? '0.4rem' : '0' }}>
+                          (Score submitted without comment)
+                        </div>
                       )}
+
+                      {r.owner_reply && (
+                        <div className="clay-owner-reply-box" style={{ padding: '0.65rem 0.85rem', marginTop: '0.35rem' }}>
+                          <div className="clay-owner-reply-header" style={{ fontSize: '0.78rem' }}>
+                            <span>💬 Your Official Reply:</span>
+                          </div>
+                          <p className="clay-owner-reply-text" style={{ fontSize: '0.85rem' }}>
+                            "{r.owner_reply}"
+                          </p>
+                        </div>
+                      )}
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <Button
+                        variant={r.owner_reply ? 'secondary' : 'primary'}
+                        size="sm"
+                        onClick={() => setSelectedRatingForReply(r)}
+                      >
+                        {r.owner_reply ? '✏️ Edit Reply' : '💬 Reply'}
+                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -676,7 +732,17 @@ export const StoreOwnerDashboard = () => {
           isOpen={showPasswordModal}
           onClose={() => setShowPasswordModal(false)}
         />
+
+        {/* Owner Reply Modal */}
+        <OwnerReplyModal
+          isOpen={!!selectedRatingForReply}
+          onClose={() => setSelectedRatingForReply(null)}
+          rating={selectedRatingForReply}
+          onReplySaved={handleReplySaved}
+        />
       </div>
     </div>
   );
 };
+
+export default StoreOwnerDashboard;

@@ -196,6 +196,33 @@ class RatingService {
 
     return await ratingRepository.findByStoreId(targetStoreId);
   }
+
+  /**
+   * Store Owner replies to a specific customer rating
+   */
+  async replyToRating(requestingUser, ratingId, replyText) {
+    const rId = parseInt(ratingId, 10);
+    if (isNaN(rId) || rId < 1) {
+      throw new BadRequestError('Valid rating ID is required.');
+    }
+
+    const rating = await ratingRepository.findById(rId);
+    if (!rating) {
+      throw new NotFoundError(`Rating with ID ${rId} was not found.`);
+    }
+
+    // Authorization: STORE_OWNER can only reply to reviews for their owned stores
+    if (requestingUser.role === 'STORE_OWNER') {
+      const store = await storeRepository.findDetailById(rating.store_id);
+      if (!store || store.owner_id !== parseInt(requestingUser.id, 10)) {
+        const ForbiddenError = require('../errors/forbidden.error');
+        throw new ForbiddenError('You do not have permission to reply to reviews for another merchant\'s store.');
+      }
+    }
+
+    const updated = await ratingRepository.replyToRating(rId, replyText);
+    return updated;
+  }
 }
 
 module.exports = new RatingService();

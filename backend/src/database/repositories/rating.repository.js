@@ -11,8 +11,10 @@ const DEV_SEEDED_RATINGS = [
     store_name: 'FreshMart Supermarket & Organics',
     rating_value: 5,
     comment: 'Exceptional fresh organic produce and friendly staff!',
+    owner_reply: 'Thank you so much Sarah! Our team works diligently to stock farm-fresh organics daily.',
+    owner_replied_at: new Date('2026-01-06T10:00:00.000Z'),
     created_at: new Date('2026-01-05T10:00:00.000Z'),
-    updated_at: new Date('2026-01-05T10:00:00.000Z'),
+    updated_at: new Date('2026-01-06T10:00:00.000Z'),
   },
   {
     id: 2,
@@ -24,8 +26,10 @@ const DEV_SEEDED_RATINGS = [
     store_name: 'Nexus Specialty Coffee & Bakery Lounge',
     rating_value: 5,
     comment: 'Best pour-over coffee in the city.',
+    owner_reply: 'Appreciate the kind words! Glad you enjoyed our single-origin roast.',
+    owner_replied_at: new Date('2026-01-07T11:00:00.000Z'),
     created_at: new Date('2026-01-06T11:00:00.000Z'),
-    updated_at: new Date('2026-01-06T11:00:00.000Z'),
+    updated_at: new Date('2026-01-07T11:00:00.000Z'),
   },
   {
     id: 3,
@@ -37,8 +41,10 @@ const DEV_SEEDED_RATINGS = [
     store_name: 'FreshMart Supermarket & Organics',
     rating_value: 4,
     comment: 'Great selection, parking can get busy during peak hours.',
+    owner_reply: 'Thanks for visiting David! We are currently expanding our weekend parking spots.',
+    owner_replied_at: new Date('2026-01-08T12:00:00.000Z'),
     created_at: new Date('2026-01-07T12:00:00.000Z'),
-    updated_at: new Date('2026-01-07T12:00:00.000Z'),
+    updated_at: new Date('2026-01-08T12:00:00.000Z'),
   },
 ];
 
@@ -67,7 +73,7 @@ class RatingRepository extends BaseRepository {
 
     try {
       const res = await this.query(
-        `SELECT id, user_id, store_id, rating_value, comment, created_at, updated_at
+        `SELECT id, user_id, store_id, rating_value, comment, owner_reply, owner_replied_at, created_at, updated_at
          FROM ratings
          WHERE user_id = $1 AND store_id = $2`,
         [uId, sId]
@@ -90,7 +96,7 @@ class RatingRepository extends BaseRepository {
       const res = await this.query(
         `INSERT INTO ratings (user_id, store_id, rating_value, comment)
          VALUES ($1, $2, $3, $4)
-         RETURNING id, user_id, store_id, rating_value, comment, created_at, updated_at`,
+         RETURNING id, user_id, store_id, rating_value, comment, owner_reply, owner_replied_at, created_at, updated_at`,
         [uId, sId, val, comment || null]
       );
       return res.rows[0];
@@ -101,6 +107,8 @@ class RatingRepository extends BaseRepository {
         store_id: sId,
         rating_value: val,
         comment: comment || null,
+        owner_reply: null,
+        owner_replied_at: null,
         created_at: new Date(),
         updated_at: new Date(),
       };
@@ -121,7 +129,7 @@ class RatingRepository extends BaseRepository {
              comment = COALESCE($2, comment),
              updated_at = NOW()
          WHERE user_id = $3 AND store_id = $4
-         RETURNING id, user_id, store_id, rating_value, comment, created_at, updated_at`,
+         RETURNING id, user_id, store_id, rating_value, comment, owner_reply, owner_replied_at, created_at, updated_at`,
         [val, comment !== undefined ? comment : null, uId, sId]
       );
       return res.rows[0] || null;
@@ -150,7 +158,7 @@ class RatingRepository extends BaseRepository {
              comment = COALESCE($2, comment),
              updated_at = NOW()
          WHERE id = $3
-         RETURNING id, user_id, store_id, rating_value, comment, updated_at`,
+         RETURNING id, user_id, store_id, rating_value, comment, owner_reply, owner_replied_at, updated_at`,
         [val, comment !== undefined ? comment : null, rId]
       );
       return res.rows[0] || null;
@@ -159,6 +167,36 @@ class RatingRepository extends BaseRepository {
       if (existing) {
         if (val !== null) existing.rating_value = val;
         if (comment !== undefined) existing.comment = comment;
+        existing.updated_at = new Date();
+        return { ...existing };
+      }
+      return null;
+    }
+  }
+
+  /**
+   * Save store owner's response reply to a specific customer review
+   */
+  async replyToRating(ratingId, replyText) {
+    const rId = parseInt(ratingId, 10);
+    const text = replyText ? replyText.trim() : null;
+
+    try {
+      const res = await this.query(
+        `UPDATE ratings
+         SET owner_reply = $1,
+             owner_replied_at = NOW(),
+             updated_at = NOW()
+         WHERE id = $2
+         RETURNING id, user_id, store_id, rating_value, comment, owner_reply, owner_replied_at, created_at, updated_at`,
+        [text, rId]
+      );
+      return res.rows[0] || null;
+    } catch (err) {
+      const existing = this.inMemoryRatings.find((r) => r.id === rId);
+      if (existing) {
+        existing.owner_reply = text;
+        existing.owner_replied_at = new Date();
         existing.updated_at = new Date();
         return { ...existing };
       }
@@ -236,7 +274,7 @@ class RatingRepository extends BaseRepository {
       const offsetIdx = params.length + 2;
 
       const selectSql = `
-        SELECT r.id, r.rating_value, r.comment, r.created_at, r.updated_at,
+        SELECT r.id, r.rating_value, r.comment, r.owner_reply, r.owner_replied_at, r.created_at, r.updated_at,
                r.store_id, s.name AS store_name, s.address AS store_address,
                u.id AS user_id, u.name AS user_name, u.email AS user_email, u.address AS user_address
         FROM ratings r
@@ -254,6 +292,8 @@ class RatingRepository extends BaseRepository {
         rating_value: row.rating_value,
         rating: row.rating_value,
         comment: row.comment,
+        owner_reply: row.owner_reply,
+        owner_replied_at: row.owner_replied_at,
         created_at: row.created_at,
         updated_at: row.updated_at,
         store_id: row.store_id,
@@ -299,6 +339,8 @@ class RatingRepository extends BaseRepository {
           rating_value: r.rating_value,
           rating: r.rating_value,
           comment: r.comment,
+          owner_reply: r.owner_reply,
+          owner_replied_at: r.owner_replied_at,
           created_at: r.created_at,
           updated_at: r.updated_at,
           store_id: r.store_id,
@@ -372,13 +414,13 @@ class RatingRepository extends BaseRepository {
   }
 
   /**
-   * Find ratings for a store with customer/user details (Name, Email, Address)
+   * Find ratings for a store with customer/user details
    */
   async findByStoreIdWithUserDetails(storeId) {
     const sId = parseInt(storeId, 10);
     try {
       const res = await this.query(
-        `SELECT r.id, r.user_id, r.store_id, r.rating_value, r.comment, r.created_at, r.updated_at,
+        `SELECT r.id, r.user_id, r.store_id, r.rating_value, r.comment, r.owner_reply, r.owner_replied_at, r.created_at, r.updated_at,
                 u.name AS user_name, u.email AS user_email, u.address AS user_address
          FROM ratings r
          JOIN users u ON r.user_id = u.id
@@ -391,6 +433,8 @@ class RatingRepository extends BaseRepository {
         rating_value: row.rating_value,
         rating: row.rating_value,
         comment: row.comment,
+        owner_reply: row.owner_reply,
+        owner_replied_at: row.owner_replied_at,
         created_at: row.created_at,
         updated_at: row.updated_at,
         user: {
@@ -417,6 +461,8 @@ class RatingRepository extends BaseRepository {
           rating_value: r.rating_value,
           rating: r.rating_value,
           comment: r.comment,
+          owner_reply: r.owner_reply,
+          owner_replied_at: r.owner_replied_at,
           created_at: r.created_at,
           updated_at: r.updated_at,
           user: {
@@ -444,7 +490,7 @@ class RatingRepository extends BaseRepository {
 
     try {
       const res = await this.query(
-        `SELECT r.id, r.user_id, r.store_id, r.rating_value, r.comment, r.created_at, r.updated_at,
+        `SELECT r.id, r.user_id, r.store_id, r.rating_value, r.comment, r.owner_reply, r.owner_replied_at, r.created_at, r.updated_at,
                 u.name AS user_name, u.email AS user_email, u.address AS user_address
          FROM ratings r
          JOIN users u ON r.user_id = u.id
@@ -462,6 +508,8 @@ class RatingRepository extends BaseRepository {
           rating_value: row.rating_value,
           rating: row.rating_value,
           comment: row.comment,
+          owner_reply: row.owner_reply,
+          owner_replied_at: row.owner_replied_at,
           created_at: row.created_at,
           updated_at: row.updated_at,
           user: {
@@ -493,6 +541,8 @@ class RatingRepository extends BaseRepository {
             rating_value: r.rating_value,
             rating: r.rating_value,
             comment: r.comment,
+            owner_reply: r.owner_reply,
+            owner_replied_at: r.owner_replied_at,
             created_at: r.created_at,
             updated_at: r.updated_at,
             user: {
@@ -512,7 +562,7 @@ class RatingRepository extends BaseRepository {
     const uId = parseInt(userId, 10);
     try {
       const res = await this.query(
-        `SELECT r.id, r.user_id, r.store_id, r.rating_value, r.comment, r.created_at, r.updated_at,
+        `SELECT r.id, r.user_id, r.store_id, r.rating_value, r.comment, r.owner_reply, r.owner_replied_at, r.created_at, r.updated_at,
                 s.name AS store_name, s.address AS store_address
          FROM ratings r
          JOIN stores s ON r.store_id = s.id
@@ -523,6 +573,22 @@ class RatingRepository extends BaseRepository {
       return res.rows;
     } catch (err) {
       return this.inMemoryRatings.filter((r) => r.user_id === uId);
+    }
+  }
+
+  async findById(ratingId) {
+    const rId = parseInt(ratingId, 10);
+    try {
+      const res = await this.query(
+        `SELECT id, user_id, store_id, rating_value, comment, owner_reply, owner_replied_at, created_at, updated_at
+         FROM ratings
+         WHERE id = $1`,
+        [rId]
+      );
+      return res.rows[0] || null;
+    } catch (err) {
+      const found = this.inMemoryRatings.find((r) => r.id === rId);
+      return found ? { ...found } : null;
     }
   }
 

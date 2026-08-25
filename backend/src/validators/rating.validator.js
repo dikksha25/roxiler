@@ -123,9 +123,28 @@ const listOwnerRatingsValidator = [
   query('address').optional().trim(),
 ];
 
+const replyToRatingValidator = [
+  param('id')
+    .isInt({ min: 1 })
+    .withMessage('Valid rating ID is required'),
+
+  body()
+    .custom((value, { req }) => {
+      const replyText = req.body.reply || req.body.comment;
+      if (!replyText || !replyText.trim()) {
+        throw new Error('Reply message cannot be empty');
+      }
+      if (replyText.trim().length > 500) {
+        throw new Error('Reply message cannot exceed 500 characters');
+      }
+      return true;
+    }),
+];
+
 module.exports = {
   createRatingValidator,
   updateRatingByStoreIdValidator,
   updateRatingValidator,
   listOwnerRatingsValidator,
+  replyToRatingValidator,
 };

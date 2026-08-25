@@ -3,9 +3,27 @@ import { dashboardService } from '../../services/dashboardService';
 import { Card } from '../common/Card';
 import { Button } from '../common/Button';
 import { Alert } from '../common/Alert';
-import { Spinner } from '../common/Spinner';
+import { SkeletonCard } from '../common/SkeletonCard';
 import { UserManagementPage } from './UserManagementPage';
 import { StoreManagementPage } from './StoreManagementPage';
+
+const formatRelativeTime = (dateStr) => {
+  if (!dateStr) return 'Just now';
+  const now = new Date();
+  const date = new Date(dateStr);
+  const diffMs = now.getTime() - date.getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHour = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHour / 24);
+
+  if (diffSec < 60) return 'Just now';
+  if (diffMin < 60) return `${diffMin} min${diffMin === 1 ? '' : 's'} ago`;
+  if (diffHour < 24) return `${diffHour} hr${diffHour === 1 ? '' : 's'} ago`;
+  if (diffDay === 1) return 'Yesterday';
+  if (diffDay < 30) return `${diffDay} days ago`;
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+};
 
 export const AdminDashboard = ({ onNavigate }) => {
   const [activeTab, setActiveTab] = useState('overview'); // overview, users, stores, ratings
@@ -34,23 +52,26 @@ export const AdminDashboard = ({ onNavigate }) => {
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '5rem 1rem' }}>
-        <Spinner size={48} />
-        <p style={{ marginTop: '1.25rem', color: 'var(--clay-text-muted)', fontSize: '1rem', fontWeight: 600 }}>
-          Computing real-time platform metrics...
-        </p>
+      <div className="clay-page">
+        <div className="clay-container">
+          <div className="clay-grid-4" style={{ marginBottom: '2.5rem' }}>
+            <SkeletonCard count={4} />
+          </div>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{ maxWidth: '600px', margin: '2rem auto' }}>
-        <Alert type="error" message={error} />
-        <div style={{ textAlign: 'center' }}>
-          <Button variant="primary" onClick={fetchStats}>
-            🔄 Retry Loading
-          </Button>
+      <div className="clay-page">
+        <div className="clay-container" style={{ maxWidth: '600px' }}>
+          <Alert type="error" message={error} />
+          <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+            <Button variant="primary" onClick={fetchStats}>
+              🔄 Retry Loading
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -199,15 +220,18 @@ export const AdminDashboard = ({ onNavigate }) => {
         {/* TAB 1: OVERVIEW */}
         {activeTab === 'overview' && (
           <div className="clay-grid-2" style={{ gap: '2rem' }}>
+            {/* Role Distribution Breakdown */}
             <Card>
-              <h3 style={{ fontSize: '1.35rem', fontWeight: 900, marginBottom: '1.25rem' }}>👥 Role Distribution Breakdown</h3>
+              <h3 style={{ fontSize: '1.35rem', fontWeight: 900, marginBottom: '1.25rem' }}>
+                👥 Role Distribution Breakdown
+              </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.92rem', marginBottom: '0.45rem', fontWeight: 700 }}>
                     <span>🛡️ System Administrators</span>
                     <span style={{ color: 'var(--clay-accent-primary)' }}>{roleBreakdown.adminCount || 0}</span>
                   </div>
-                  <div style={{ height: '14px', background: '#EFEBF5', borderRadius: '9999px', boxShadow: 'var(--shadow-clay-pressed)', overflow: 'hidden' }}>
+                  <div style={{ height: '14px', background: 'var(--clay-input-bg)', borderRadius: '9999px', boxShadow: 'var(--shadow-clay-pressed)', overflow: 'hidden' }}>
                     <div style={{ height: '100%', background: 'var(--clay-gradient-primary)', width: `${((roleBreakdown.adminCount || 0) / (stats.totalUsers || 1)) * 100}%`, borderRadius: '9999px' }} />
                   </div>
                 </div>
@@ -217,7 +241,7 @@ export const AdminDashboard = ({ onNavigate }) => {
                     <span>🏪 Store Owners</span>
                     <span style={{ color: 'var(--clay-accent-secondary)' }}>{roleBreakdown.ownerCount || 0}</span>
                   </div>
-                  <div style={{ height: '14px', background: '#EFEBF5', borderRadius: '9999px', boxShadow: 'var(--shadow-clay-pressed)', overflow: 'hidden' }}>
+                  <div style={{ height: '14px', background: 'var(--clay-input-bg)', borderRadius: '9999px', boxShadow: 'var(--shadow-clay-pressed)', overflow: 'hidden' }}>
                     <div style={{ height: '100%', background: 'var(--clay-gradient-secondary)', width: `${((roleBreakdown.ownerCount || 0) / (stats.totalUsers || 1)) * 100}%`, borderRadius: '9999px' }} />
                   </div>
                 </div>
@@ -227,37 +251,31 @@ export const AdminDashboard = ({ onNavigate }) => {
                     <span>⭐ Normal Users (Consumers)</span>
                     <span style={{ color: 'var(--clay-accent-tertiary)' }}>{roleBreakdown.userCount || 0}</span>
                   </div>
-                  <div style={{ height: '14px', background: '#EFEBF5', borderRadius: '9999px', boxShadow: 'var(--shadow-clay-pressed)', overflow: 'hidden' }}>
+                  <div style={{ height: '14px', background: 'var(--clay-input-bg)', borderRadius: '9999px', boxShadow: 'var(--shadow-clay-pressed)', overflow: 'hidden' }}>
                     <div style={{ height: '100%', background: 'var(--clay-gradient-tertiary)', width: `${((roleBreakdown.userCount || 0) / (stats.totalUsers || 1)) * 100}%`, borderRadius: '9999px' }} />
                   </div>
                 </div>
               </div>
             </Card>
 
+            {/* Sector / Category Breakdown Chart */}
             <Card>
-              <h3 style={{ fontSize: '1.35rem', fontWeight: 900, marginBottom: '1.25rem' }}>🚀 Quick Administrative Shortcuts</h3>
+              <h3 style={{ fontSize: '1.35rem', fontWeight: 900, marginBottom: '1.25rem' }}>
+                🏬 Commercial Sectors Breakdown
+              </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                <button
-                  onClick={() => setActiveTab('users')}
-                  className="clay-btn clay-btn-secondary"
-                  style={{ textAlign: 'left', justifyContent: 'flex-start', width: '100%' }}
-                >
-                  👥 <strong>Manage Users</strong> — View all accounts, filter by role
-                </button>
-                <button
-                  onClick={() => setActiveTab('stores')}
-                  className="clay-btn clay-btn-secondary"
-                  style={{ textAlign: 'left', justifyContent: 'flex-start', width: '100%' }}
-                >
-                  🏪 <strong>Manage Stores</strong> — View store registry &amp; owner bindings
-                </button>
-                <button
-                  onClick={() => onNavigate('stores')}
-                  className="clay-btn clay-btn-secondary"
-                  style={{ textAlign: 'left', justifyContent: 'flex-start', width: '100%' }}
-                >
-                  🌐 <strong>Public Directory Preview</strong> — Browse customer view
-                </button>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.65rem 0.85rem', background: 'var(--clay-input-bg)', borderRadius: '16px', boxShadow: 'var(--shadow-clay-pressed)' }}>
+                  <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>🥑 Grocery &amp; Organics</span>
+                  <span className="clay-badge clay-badge-green">1 Store (33%)</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.65rem 0.85rem', background: 'var(--clay-input-bg)', borderRadius: '16px', boxShadow: 'var(--shadow-clay-pressed)' }}>
+                  <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>☕ Cafe &amp; Bakery Lounge</span>
+                  <span className="clay-badge clay-badge-amber">1 Store (33%)</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.65rem 0.85rem', background: 'var(--clay-input-bg)', borderRadius: '16px', boxShadow: 'var(--shadow-clay-pressed)' }}>
+                  <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>⚡ Tech &amp; Smart Devices</span>
+                  <span className="clay-badge clay-badge-purple">1 Store (33%)</span>
+                </div>
               </div>
             </Card>
           </div>
@@ -269,10 +287,23 @@ export const AdminDashboard = ({ onNavigate }) => {
         {/* TAB 3: STORE MANAGEMENT */}
         {activeTab === 'stores' && <StoreManagementPage />}
 
-        {/* TAB 4: RATINGS */}
+        {/* TAB 4: RATINGS FEED WITH RELATIVE TIMESTAMPS */}
         {activeTab === 'ratings' && (
           <Card>
-            <h3 style={{ margin: '0 0 1.5rem 0', fontSize: '1.35rem', fontWeight: 900 }}>Live Consumer Ratings Feed</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div>
+                <h3 style={{ margin: '0 0 0.25rem 0', fontSize: '1.35rem', fontWeight: 900 }}>
+                  ⭐ Live Consumer Activity Feed
+                </h3>
+                <p style={{ margin: 0, color: 'var(--clay-text-muted)', fontSize: '0.88rem' }}>
+                  Real-time ratings stream from across the platform
+                </p>
+              </div>
+              <span className="clay-badge clay-badge-purple">
+                Total: {recentRatings.length} Recent Reviews
+              </span>
+            </div>
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               {recentRatings.length === 0 ? (
                 <p style={{ color: 'var(--clay-text-muted)' }}>No ratings submitted yet.</p>
@@ -281,17 +312,20 @@ export const AdminDashboard = ({ onNavigate }) => {
                   <div
                     key={r.id}
                     style={{
-                      background: '#EFEBF5',
+                      background: 'var(--clay-input-bg)',
                       boxShadow: 'var(--shadow-clay-pressed)',
                       borderRadius: 'var(--radius-clay-inner)',
                       padding: '1.25rem 1.5rem',
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                         <strong style={{ color: 'var(--clay-text-primary)' }}>{r.user_name || `User #${r.user_id}`}</strong>
-                        <span style={{ color: 'var(--clay-text-dim)', fontSize: '0.85rem' }}>reviewed</span>
+                        <span style={{ color: 'var(--clay-text-dim)', fontSize: '0.85rem' }}>rated</span>
                         <strong style={{ color: 'var(--clay-accent-primary)' }}>{r.store_name || `Store #${r.store_id}`}</strong>
+                        <span style={{ color: 'var(--clay-text-dim)', fontSize: '0.8rem', marginLeft: '0.5rem' }}>
+                          &bull; {formatRelativeTime(r.created_at)}
+                        </span>
                       </div>
                       <div style={{ color: 'var(--clay-warning)', fontWeight: 900, fontSize: '1.15rem' }}>
                         {'★'.repeat(r.rating_value || r.rating || 5)}{'☆'.repeat(5 - (r.rating_value || r.rating || 5))}
@@ -315,3 +349,5 @@ export const AdminDashboard = ({ onNavigate }) => {
     </div>
   );
 };
+
+export default AdminDashboard;

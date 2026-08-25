@@ -5,6 +5,7 @@ const {
   updateRatingByStoreIdValidator,
   updateRatingValidator,
   listOwnerRatingsValidator,
+  replyToRatingValidator,
 } = require('../../validators/rating.validator');
 const validate = require('../../middleware/validate.middleware');
 const authenticate = require('../../middleware/auth.middleware');
@@ -44,6 +45,15 @@ router.get(
   authenticate,
   authorize(ROLES.STORE_OWNER, ROLES.SYSTEM_ADMIN),
   ratingController.getStoreRatings
+);
+
+// STORE_OWNER & SYSTEM_ADMIN: Reply to customer review
+router.post(
+  '/:id/reply',
+  authenticate,
+  authorize(ROLES.STORE_OWNER, ROLES.SYSTEM_ADMIN),
+  validate(replyToRatingValidator),
+  ratingController.replyToRating
 );
 
 // NORMAL_USER: Submit rating for a store
