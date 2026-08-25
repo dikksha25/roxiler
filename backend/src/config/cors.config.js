@@ -1,12 +1,16 @@
 const envConfig = require('./env.config');
 
-const allowedOrigins = [
-  envConfig.clientUrl,
-  'http://localhost:5173',
-  'http://localhost:3000',
-  'http://127.0.0.1:5173',
-  'http://127.0.0.1:3000',
-];
+const allowedOrigins = [envConfig.clientUrl];
+
+// Only permit localhost origins during development / test
+if (envConfig.isDevelopment || envConfig.isTest) {
+  allowedOrigins.push(
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:3000'
+  );
+}
 
 const corsOptions = {
   origin: (origin, callback) => {
